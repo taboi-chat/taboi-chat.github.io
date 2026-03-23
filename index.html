@@ -1,0 +1,81 @@
+<!-- index.html | Base Taboi-Chat -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taboi-Chat</title>
+
+<link rel="icon" href="files/icon/favicon.ico">
+
+<style>
+body{
+    margin:0;
+    background:#0b0b0b;
+    color:#fff;
+    font-family:Arial, Helvetica, sans-serif;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+}
+
+.box{
+    background:#151515;
+    padding:30px;
+    border-radius:8px;
+    border:1px solid #222;
+}
+
+.error{
+    color:#ff4d4d;
+    font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box" id="status"></div>
+
+<script>
+/*
+    CONFIGURAÇÃO DAS VERSÕES
+*/
+const versions = [
+    { file: "v3.html", latest:true },
+    { file: "v2.html" },
+    { file: "v1.html" }
+];
+
+const statusBox = document.getElementById("status");
+
+/*
+    PROCURA A VERSÃO MAIS RECENTE
+*/
+const latest = versions.find(v => v.latest === true);
+
+/*
+    REDIRECIONA IMEDIATAMENTE
+*/
+if (latest && latest.file) {
+    window.location.replace("/" + latest.file);
+}
+
+/*
+    ERRO SE NÃO EXISTIR VERSÃO
+*/
+else {
+    statusBox.innerHTML = `
+        <div class="error">
+            ERRO: nenhuma versão do Taboi-Chat encontrada.
+        </div>
+        <br>
+        Defina uma versão com <b>latest:true</b>.
+    `;
+}
+</script>
+
+</body>
+</html>
