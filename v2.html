@@ -2,17 +2,15 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Chat</title>
 
-<!-- favicon -->
 <link rel="icon" href="files/icon/favicon.ico">
 
 <style>
 :root{
  --orange:#ff7a00;
  --orange-2:#ff8f26;
- --bg:#0f0f10;
  --card:#17181b;
  --text:#eaeaea;
  --muted:#a8a8a8;
@@ -40,18 +38,18 @@ body{
  flex-direction:column;
  justify-content:center;
  align-items:center;
- gap:20px;
+ gap:18px;
  z-index:300;
 }
 
 .user-select button{
- padding:14px 24px;
+ padding:14px 26px;
  border:0;
  border-radius:12px;
  font-size:16px;
  cursor:pointer;
- background:linear-gradient(90deg,var(--orange),var(--orange-2));
  font-weight:700;
+ background:linear-gradient(90deg,var(--orange),var(--orange-2));
 }
 
 /* APP */
@@ -68,19 +66,29 @@ body{
 }
 .app.visible{opacity:1}
 
-/* TOP */
+/* HEADER FIXADO */
 .top{
  display:flex;
  align-items:center;
- gap:12px;
- padding:14px;
+ gap:10px;
+ padding:8px 14px;
+ min-height:52px;
  background:linear-gradient(90deg,var(--orange),var(--orange-2));
  color:#111;
 }
-.logo img{
+
+.logo{
  width:34px;
  height:34px;
- border-radius:8px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+}
+
+.logo img{
+ width:28px;
+ height:28px;
+ object-fit:contain;
 }
 
 /* FEED */
@@ -118,11 +126,9 @@ body{
  padding:10px 12px;
  border-radius:16px;
  box-shadow:0 3px 10px #0006;
-
- /* FIX OVERFLOW */
+ white-space:pre-wrap;
  overflow-wrap:anywhere;
  word-break:break-word;
- white-space:pre-wrap;
 }
 
 .bubble a{
@@ -142,6 +148,7 @@ body{
  gap:6px;
  padding:10px;
  background:#101114;
+ position:relative;
 }
 
 textarea{
@@ -173,24 +180,40 @@ button{
  color:#fff;
 }
 
-/* emoji panel */
+/* EMOJI PANEL */
 .emoji-panel{
  position:absolute;
  bottom:70px;
+ left:10px;
  background:#1c1e22;
  padding:10px;
- border-radius:10px;
+ border-radius:12px;
  display:none;
- gap:6px;
- flex-wrap:wrap;
+ flex-direction:column;
+ gap:8px;
  width:220px;
+ box-shadow:0 10px 20px #0008;
 }
+
+.emoji-grid{
+ display:flex;
+ flex-wrap:wrap;
+ gap:6px;
+}
+
 .emoji-panel span{
  cursor:pointer;
  font-size:20px;
 }
 
-/* mobile */
+.emoji-close{
+ background:#2a2c32;
+ color:#fff;
+ border-radius:8px;
+ padding:6px;
+ cursor:pointer;
+}
+
 @media(max-width:560px){
  .avatar{display:none}
  .msg{max-width:90%}
@@ -224,10 +247,13 @@ button{
 <button class="tool" id="linkBtn">🔗</button>
 <textarea id="text" placeholder="mensagem"></textarea>
 <button class="send" id="sendBtn">Enviar</button>
+
+<div class="emoji-panel" id="emojiPanel">
+<button class="emoji-close" id="closeEmoji">Fechar</button>
+<div class="emoji-grid" id="emojiGrid"></div>
 </div>
 
-<div class="emoji-panel" id="emojiPanel"></div>
-
+</div>
 </div>
 
 <script type="module">
@@ -249,9 +275,8 @@ const MESSAGES=collection(db,"taboi_messages");
 
 const feed=document.getElementById("feed");
 const text=document.getElementById("text");
-const emojiBtn=document.getElementById("emojiBtn");
-const emojiPanel=document.getElementById("emojiPanel");
 
+/* USER */
 function getUser(){
  return localStorage.getItem("taboi_user")||"";
 }
@@ -268,18 +293,29 @@ if(getUser()){
 }
 
 /* EMOJIS */
-const emojis=["😀","😂","😎","🔥","❤️","👍","🥶","😱","😡","🎉","🚀"];
+const emojiBtn=document.getElementById("emojiBtn");
+const emojiPanel=document.getElementById("emojiPanel");
+const emojiGrid=document.getElementById("emojiGrid");
+const closeEmoji=document.getElementById("closeEmoji");
+
+const emojis = [
+  "😀","😂","😎","😍","🥶","😱","😡","😭",
+  "🔥","❤️","👍","👏","🎉","🚀","⭐","✨",
+  "🤔","😴","🥳","💀"
+];
+
 emojis.forEach(e=>{
  const s=document.createElement("span");
  s.textContent=e;
- s.onclick=()=>text.value+=e;
- emojiPanel.appendChild(s);
+ s.onclick=()=>{
+  text.value+=e;
+  text.focus();
+ };
+ emojiGrid.appendChild(s);
 });
 
-emojiBtn.onclick=()=>{
- emojiPanel.style.display=
- emojiPanel.style.display==="flex"?"none":"flex";
-};
+emojiBtn.onclick=()=>emojiPanel.style.display="flex";
+closeEmoji.onclick=()=>emojiPanel.style.display="none";
 
 /* LINK BUTTON */
 document.getElementById("linkBtn").onclick=()=>{
@@ -287,31 +323,36 @@ document.getElementById("linkBtn").onclick=()=>{
  if(url) text.value+=` ${url} `;
 };
 
-/* SEND */
-document.getElementById("sendBtn").onclick=send;
-
+/* send */
 async function send(){
- const body=text.value.trim();
- if(!body)return;
+ const body = text.value.trim();
+ if(!body) return;
 
- await addDoc(MESSAGES,{
-  body,
-  user:getUser(),
-  ts:serverTimestamp()
- });
+ // limpa IMEDIATO (antes de enviar)
+ text.value = "";
+ text.focus();
 
- text.value="";
+ try{
+  await addDoc(MESSAGES,{
+   body,
+   user:getUser(),
+   ts:serverTimestamp()
+  });
+ }catch(e){
+  alert("Erro ao enviar");
+ }
 }
 
-/* AUTO LINK */
-function linkify(text){
- return text.replace(
+/* LINKIFY */
+function linkify(t){
+ return t.replace(
  /(https?:\/\/[^\s]+)/g,
  '<a href="$1" target="_blank">$1</a>'
  );
 }
 
 const q=query(MESSAGES,orderBy("ts","asc"),limit(200));
+
 onSnapshot(q,(snap)=>{
  feed.innerHTML="";
  snap.forEach(doc=>{
@@ -349,6 +390,12 @@ function messageEl(m){
 
  return wrap;
 }
+ text.addEventListener("keydown",(e)=>{
+ if(e.key === "Enter" && !e.shiftKey){
+  e.preventDefault();
+  send();
+ }
+});
 </script>
 
 </body>
