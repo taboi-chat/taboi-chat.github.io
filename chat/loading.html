@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carregando...</title>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #000000, #1a1a1a);
+      color: orange;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100vh;
+    }
+
+    .center {
+      text-align: center;
+      margin-top: auto;
+      margin-bottom: auto;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      font-size: 16px;
+      font-weight: normal;
+      opacity: 0.8;
+      margin-bottom: 30px;
+    }
+
+    .progress-container {
+      width: 300px;
+      height: 10px;
+      background-color: #333;
+      border-radius: 5px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background-color: orange;
+      transition: width 0.2s;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 20px;
+      font-size: 12px;
+      color: #ffa500;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="center">
+    <h1>TABOI-chat</h1>
+    <h2>Serviço de chat privado e criptografado.</h2>
+
+    <div class="progress-container">
+      <div class="progress-bar" id="progress"></div>
+    </div>
+  </div>
+
+  <footer>
+    <div>Desenvolvido por: ViquinhoDev</div>
+    <div>Versão: 3.2.4 (Beta)</div>
+  </footer>
+
+  <script>
+    let progress = 0;
+    const bar = document.getElementById("progress");
+
+    const interval = setInterval(() => {
+      progress += Math.random() * 10; // avanço aleatório pra parecer real
+
+      if (progress >= 100) {
+        progress = 100;
+        bar.style.width = progress + "%";
+        clearInterval(interval);
+
+        setTimeout(() => {
+          window.location.href = "login.html";
+        }, 500);
+      }
+
+      bar.style.width = progress + "%";
+    }, 200);
+  </script>
+
+</body>
+</html>
