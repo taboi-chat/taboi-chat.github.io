@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chat</title>
+<link rel="icon" href="files/icon/favicon.ico">
+
+<style>
+:root{
+ --orange:#ff7a00;
+ --orange-2:#ff8f26;
+ --card:#17181b;
+ --text:#eaeaea;
+ --muted:#a8a8a8;
+ --mine:#23252a;
+}
+
+*{box-sizing:border-box}
+
+body{
+ margin:0;
+ background:#0b0b0b;
+ font-family:system-ui;
+ color:var(--text);
+ height:100vh;
+ display:grid;
+ place-items:center;
+}
+
+/* ===== USER SELECT ===== */
+.user-select{
+ position:fixed;
+ inset:0;
+ background:#0f0f10;
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ align-items:center;
+ gap:18px;
+ z-index:300;
+}
+
+.user-select button{
+ padding:14px 26px;
+ border:0;
+ border-radius:12px;
+ font-size:16px;
+ cursor:pointer;
+ font-weight:700;
+ background:linear-gradient(90deg,var(--orange),var(--orange-2));
+}
+
+/* ===== APP ===== */
+.app{
+ width:min(900px,100%);
+ height:min(780px,100vh);
+ display:flex;
+ flex-direction:column;
+ background:var(--card);
+ border-radius:18px;
+ overflow:hidden;
+ opacity:0;
+ transition:.4s;
+}
+.app.visible{opacity:1}
+
+/* ===== HEADER (CORRIGIDO) ===== */
+.top{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ padding:6px 12px;
+ height:48px;
+ background:linear-gradient(90deg,var(--orange),var(--orange-2));
+ color:#111;
+}
+
+.top h1{
+ margin:0;
+ font-size:16px;
+ line-height:1;
+}
+
+.logo img{
+ width:28px;
+ height:28px;
+ object-fit:contain;
+}
+
+/* ===== FEED ===== */
+.feed{
+ flex:1;
+ overflow:auto;
+ padding:14px;
+ background:#15161a;
+}
+
+.msg{
+ display:flex;
+ gap:10px;
+ margin:6px 0;
+ max-width:78%;
+}
+
+.msg.me{
+ margin-left:auto;
+ flex-direction:row-reverse;
+}
+
+.avatar{
+ min-width:34px;
+ height:34px;
+ border-radius:50%;
+ background:#2b2d33;
+ display:grid;
+ place-items:center;
+ font-weight:700;
+}
+
+.bubble{
+ background:var(--mine);
+ padding:10px 12px;
+ border-radius:16px;
+ box-shadow:0 3px 10px #0006;
+ white-space:pre-wrap;
+ overflow-wrap:anywhere;
+ word-break:break-word;
+}
+
+.bubble a{
+ color:#ffae5d;
+ text-decoration:underline;
+}
+
+.meta{
+ font-size:11px;
+ color:var(--muted);
+ margin-top:4px;
+}
+
+/* ===== INPUT ===== */
+.input{
+ display:flex;
+ gap:6px;
+ padding:10px;
+ background:#101114;
+ position:relative;
+}
+
+textarea{
+ flex:1;
+ height:44px;
+ border-radius:10px;
+ border:1px solid #2a2c32;
+ background:#15171c;
+ color:#fff;
+ padding:10px;
+ resize:none;
+}
+
+button{
+ border:0;
+ border-radius:10px;
+ cursor:pointer;
+}
+
+.send{
+ background:linear-gradient(90deg,var(--orange),var(--orange-2));
+ font-weight:700;
+ padding:0 14px;
+}
+
+.tool{
+ width:40px;
+ background:#1f2126;
+ color:#fff;
+}
+
+/* ===== EMOJIS ===== */
+.emoji-panel{
+ position:absolute;
+ bottom:70px;
+ left:10px;
+ background:#1c1e22;
+ padding:10px;
+ border-radius:12px;
+ display:none;
+ flex-direction:column;
+ gap:8px;
+ width:220px;
+ box-shadow:0 10px 20px #0008;
+}
+
+.emoji-grid{
+ display:flex;
+ flex-wrap:wrap;
+ gap:6px;
+}
+
+.emoji-panel span{
+ cursor:pointer;
+ font-size:20px;
+}
+
+.emoji-close{
+ background:#2a2c32;
+ color:#fff;
+ padding:6px;
+}
+
+@media(max-width:560px){
+ .avatar{display:none}
+ .msg{max-width:90%}
+}
+ /* ===== SCROLLBAR PERSONALIZADA (LARANJA) ===== */
+
+/* Chrome, Edge, Opera */
+::-webkit-scrollbar{
+  width:10px;
+  height:10px;
+}
+
+::-webkit-scrollbar-track{
+  background:#101114;
+  border-radius:10px;
+}
+
+::-webkit-scrollbar-thumb{
+  background:linear-gradient(
+    180deg,
+    var(--orange),
+    var(--orange-2)
+  );
+  border-radius:10px;
+  border:2px solid #101114;
+}
+
+::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(
+    180deg,
+    #ff8f26,
+    #ffa347
+  );
+}
+
+/* Firefox */
+*{
+  scrollbar-width:thin;
+  scrollbar-color: var(--orange) #101114;
+}
+</style>
+</head>
+
+<body>
+
+<!-- SELEÇÃO -->
+<div class="user-select" id="userSelect">
+<h2>Quem é você?</h2>
+<button onclick="chooseUser('Vicente')">Vicente</button>
+<button onclick="chooseUser('Lucca')">Lucca</button>
+<button onclick="chooseUser('Francisco')">Francisco</button>
+</div>
+
+<div class="app" id="app">
+
+<div class="top">
+<div class="logo">
+<img src="files/icon/Tfavicon.png">
+</div>
+<h1>taboi - chat</h1>
+</div>
+
+<div id="feed" class="feed"></div>
+
+<div class="input">
+<button class="tool" id="emojiBtn">😀</button>
+<button class="tool" id="linkBtn">🔗</button>
+<textarea id="text" placeholder="mensagem"></textarea>
+<button class="send" id="sendBtn">Enviar</button>
+
+<div class="emoji-panel" id="emojiPanel">
+<button class="emoji-close" id="closeEmoji">Fechar</button>
+<div class="emoji-grid" id="emojiGrid"></div>
+</div>
+</div>
+
+</div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import{getFirestore,collection,addDoc,serverTimestamp,query,orderBy,onSnapshot,limit}from"https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+/* FIREBASE */
+const firebaseConfig = {
+  apiKey: "AIzaSyD6qPIIX4i8n0e7mm31y2D2Pb1B26NogGM",
+  authDomain: "taboi-v2.firebaseapp.com",
+  projectId: "taboi-v2",
+  storageBucket: "taboi-v2.firebasestorage.app",
+  messagingSenderId: "774936620311",
+  appId: "1:774936620311:web:f6440002476c7cd9c2db52"
+};
+
+const appFB=initializeApp(firebaseConfig);
+const db=getFirestore(appFB);
+const MESSAGES=collection(db,"taboi_messages");
+
+/* ELEMENTOS */
+const feed=document.getElementById("feed");
+const text=document.getElementById("text");
+
+/* USER */
+function getUser(){
+ return localStorage.getItem("taboi_user")||"";
+}
+
+window.chooseUser=(u)=>{
+ localStorage.setItem("taboi_user",u);
+ document.getElementById("userSelect").style.display="none";
+ document.getElementById("app").classList.add("visible");
+};
+
+if(getUser()){
+ document.getElementById("userSelect").style.display="none";
+ document.getElementById("app").classList.add("visible");
+}
+
+/* EMOJIS */
+const emojis = [
+  "😀","😂","😎","😍","🥶","😱","😡","😭",
+  "🔥","❤️","👍","👏","🎉","🚀","⭐","✨",
+  "🤔","😴","🥳","💀","🆗"
+];
+const emojiPanel=document.getElementById("emojiPanel");
+const emojiGrid=document.getElementById("emojiGrid");
+
+emojis.forEach(e=>{
+ const s=document.createElement("span");
+ s.textContent=e;
+ s.onclick=()=>{text.value+=e;text.focus();}
+ emojiGrid.appendChild(s);
+});
+
+emojiBtn.onclick=()=>emojiPanel.style.display="flex";
+closeEmoji.onclick=()=>emojiPanel.style.display="none";
+
+/* LINK */
+linkBtn.onclick=()=>{
+ const url=prompt("Cole o link:");
+ if(url) text.value+=` ${url} `;
+};
+
+/* ENVIAR */
+sendBtn.onclick=send;
+
+async function send(){
+ const user=getUser();
+ if(!user)return alert("Selecione um usuário");
+
+ const body=text.value.trim();
+ if(!body)return;
+
+ text.value="";
+ text.focus();
+
+ await addDoc(MESSAGES,{
+  body,
+  user,
+  ts:serverTimestamp()
+ });
+}
+
+/* ENTER ENVIA */
+text.addEventListener("keydown",(e)=>{
+ if(e.key==="Enter"&&!e.shiftKey){
+  e.preventDefault();
+  send();
+ }
+});
+
+/* LINK CLICKAVEL */
+function linkify(t){
+ return t.replace(/(https?:\/\/[^\s]+)/g,
+ '<a href="$1" target="_blank">$1</a>');
+}
+
+/* LISTENER */
+const q=query(MESSAGES,orderBy("ts","asc"),limit(200));
+
+onSnapshot(q,(snap)=>{
+ feed.innerHTML="";
+ snap.forEach(doc=>{
+  const m=doc.data();
+  feed.appendChild(messageEl(m));
+ });
+ feed.scrollTop=feed.scrollHeight;
+});
+
+function messageEl(m){
+ const mine=m.user===getUser();
+
+ const wrap=document.createElement("div");
+ wrap.className="msg"+(mine?" me":"");
+
+ const av=document.createElement("div");
+ av.className="avatar";
+ av.textContent=m.user[0];
+
+ const right=document.createElement("div");
+
+ const bubble=document.createElement("div");
+ bubble.className="bubble";
+ bubble.innerHTML=linkify(m.body);
+
+ const meta=document.createElement("div");
+ meta.className="meta";
+ meta.textContent=m.user;
+
+ right.appendChild(bubble);
+ right.appendChild(meta);
+
+ wrap.appendChild(av);
+ wrap.appendChild(right);
+
+ return wrap;
+}
+</script>
+
+</body>
+</html>
