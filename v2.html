@@ -394,9 +394,10 @@ Object.entries(emojiCategories).forEach(([category, list]) => {
   emojiGrid.appendChild(group);
 });
 
-emojiBtn.onclick=()=>emojiPanel.style.display="flex";
-closeEmoji.onclick=()=>emojiPanel.style.display="none";
-
+emojiBtn.onclick = () => {
+  emojiPanel.style.display =
+    emojiPanel.style.display === "flex" ? "none" : "flex";
+};
 /* LINK */
 linkBtn.onclick=()=>{
  const url=prompt("Cole o link:");
@@ -421,6 +422,9 @@ async function send(){
   user,
   ts:serverTimestamp()
  });
+
+ // 👇 fecha o painel
+ emojiPanel.style.display = "none";
 }
 
 /* ENTER ENVIA */
@@ -477,6 +481,17 @@ function messageEl(m){
 
  return wrap;
 }
+ document.addEventListener("click", (e) => {
+
+  const isClickInside =
+    emojiPanel.contains(e.target) ||
+    emojiBtn.contains(e.target);
+
+  if (!isClickInside) {
+    emojiPanel.style.display = "none";
+  }
+
+});
 </script>
 
 </body>
