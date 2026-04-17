@@ -193,11 +193,18 @@ button{
 }
 
 .emoji-grid{
- display:flex;
- flex-wrap:wrap;
- gap:6px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
 }
 
+.emoji-category{
+  font-size:12px;
+  color:#aaa;
+  margin-top:6px;
+  margin-bottom:2px;
+}
+ 
 .emoji-panel span{
  cursor:pointer;
  font-size:20px;
@@ -248,6 +255,23 @@ button{
 *{
   scrollbar-width:thin;
   scrollbar-color: var(--orange) #101114;
+}
+ .emoji-panel{
+  position:absolute;
+  bottom:70px;
+  left:10px;
+  background:#1c1e22;
+  padding:10px;
+  border-radius:12px;
+  display:none;
+  flex-direction:column;
+  gap:8px;
+  width:240px;
+
+  max-height:260px;       /* limite de altura */
+  overflow-y:auto;        /* scroll vertical */
+
+  box-shadow:0 10px 20px #0008;
 }
 </style>
 </head>
@@ -326,49 +350,51 @@ if(getUser()){
  document.getElementById("app").classList.add("visible");
 }
 
-/* EMOJIS */
-const emojis = [
-  "😀","😂","😎","😍","🥶","😱","😡","😭",
-  "🔥","❤️","👍","👏","🎉","🚀","⭐","✨",
-  "🤔","😴","🥳","💀","🆗",
-
-  // Carinhas extras
-  "😄","😁","😆","😅","🤣","😊","🙂","🙃","😉","😌","😋","😜","🤪","🤨","🧐",
-  "😏","😒","🙄","😬","😔","😪","🤤","😷","🤒","🤕","🤢","🤮","🥵","🥴","😵",
-
-  // Gestos
-  "👋","🤚","🖐️","✋","🖖","👌","🤌","🤏","✌️","🤞","🤟","🤘","🤙",
-  "👈","👉","👆","👇","☝️","✊","👊","🤛","🤜","👏","🙌","👐","🤲",
-
-  // Corações
-  "💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞","💓","💗","💖",
-
-  // Objetos e símbolos
-  "⚡","💥","💫","💦","💨","🕳️","💣","💬","🗯️","💭","🧠","🫀",
-  "🧊","🧩","🧸","🎁","🎈","🎂","🍕","🍔","🍟","🍩","🍪",
-
-  // Animais
-  "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷",
-  "🐸","🐵","🐔","🐧","🐦","🐤","🦄","🐝","🐞","🐙",
-
-  // Natureza e clima
-  "🌍","🌎","🌏","🌙","☀️","🌤️","⛅","🌧️","⛈️","❄️","🌈","🌊","🔥",
-
-  // Transportes
-  "🚗","🚕","🚌","🚎","🏎️","🚓","🚑","🚒","🚜","✈️","🚀","🚁","⛵",
-
-  // Tech
-  "💻","⌨️","🖥️","📱","📲","🖱️","🖨️","📷","🎥","📡","🔋","🔌"
-];
+const emojiCategories = {
+  "😀 Carinhas": ["😀","😂","😎","😍","🥶","😱","😡","😭","😄","😁","😆","😅","🤣","😊"],
+  
+  "❤️ Corações": ["❤️","💛","💚","💙","💜","🖤","🤍","🤎","💔","💕","💞"],
+  
+  "👏 Gestos": ["👍","👏","🙌","👊","✌️","🤘","🤙","👌","🤝"],
+  
+  "🎉 Objetos": ["🔥","⭐","✨","🎉","🎁","🎈","🎂","💣","💬"],
+  
+  "🐶 Animais": ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐸","🐵"],
+  
+  "🌍 Natureza": ["🌍","🌙","☀️","🌧️","⛈️","❄️","🌈","🌊"],
+  
+  "🚗 Transporte": ["🚗","🚕","🚌","✈️","🚀","🚁"],
+  
+  "💻 Tech": ["💻","📱","⌨️","🖥️","🖱️","📷","🎥","🔋"]
+};
  
 const emojiPanel=document.getElementById("emojiPanel");
 const emojiGrid=document.getElementById("emojiGrid");
 
-emojis.forEach(e=>{
- const s=document.createElement("span");
- s.textContent=e;
- s.onclick=()=>{text.value+=e;text.focus();}
- emojiGrid.appendChild(s);
+emojiGrid.innerHTML = "";
+
+Object.entries(emojiCategories).forEach(([category, list]) => {
+
+  const title = document.createElement("div");
+  title.className = "emoji-category";
+  title.textContent = category;
+
+  emojiGrid.appendChild(title);
+
+  const group = document.createElement("div");
+  group.className = "emoji-grid";
+
+  list.forEach(e => {
+    const s = document.createElement("span");
+    s.textContent = e;
+    s.onclick = () => {
+      text.value += e;
+      text.focus();
+    };
+    group.appendChild(s);
+  });
+
+  emojiGrid.appendChild(group);
 });
 
 emojiBtn.onclick=()=>emojiPanel.style.display="flex";
