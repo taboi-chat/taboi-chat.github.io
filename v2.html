@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Chat</title>
+<title>Chat com Notificações</title>
 <link rel="icon" href="files/icon/favicon.ico">
 
 <style>
@@ -65,7 +65,7 @@ body{
 }
 .app.visible{opacity:1}
 
-/* ===== HEADER (CORRIGIDO) ===== */
+/* ===== HEADER ===== */
 .top{
  display:flex;
  align-items:center;
@@ -137,6 +137,15 @@ body{
  font-size:11px;
  color:var(--muted);
  margin-top:4px;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:8px;
+}
+
+.timestamp{
+ font-size:10px;
+ opacity:0.7;
 }
 
 /* ===== INPUT ===== */
@@ -157,6 +166,7 @@ textarea{
  color:#fff;
  padding:10px;
  resize:none;
+ font-family:system-ui;
 }
 
 button{
@@ -188,7 +198,9 @@ button{
  display:none;
  flex-direction:column;
  gap:8px;
- width:220px;
+ width:240px;
+ max-height:260px;
+ overflow-y:auto;
  box-shadow:0 10px 20px #0008;
 }
 
@@ -207,21 +219,97 @@ button{
 .emoji-panel span{
  cursor:pointer;
  font-size:20px;
+ transition:transform 0.1s;
 }
 
-.emoji-close{
- background:#2a2c32;
- color:#fff;
- padding:6px;
+.emoji-panel span:hover{
+ transform:scale(1.2);
 }
 
-@media(max-width:560px){
- .avatar{display:none}
- .msg{max-width:90%}
+/* ===== NOTIFICAÇÃO ===== */
+.notification{
+ position:fixed;
+ top:20px;
+ right:20px;
+ background:linear-gradient(135deg, var(--orange), var(--orange-2));
+ color:#111;
+ padding:12px 20px;
+ border-radius:12px;
+ box-shadow:0 5px 20px rgba(0,0,0,0.3);
+ display:flex;
+ align-items:center;
+ gap:12px;
+ z-index:1000;
+ animation: slideIn 0.3s ease-out;
+ cursor:pointer;
+ font-weight:600;
+ min-width:250px;
+ backdrop-filter:blur(10px);
 }
- /* ===== SCROLLBAR PERSONALIZADA (LARANJA) ===== */
 
-/* Chrome, Edge, Opera */
+.notification-content{
+ display:flex;
+ flex-direction:column;
+ gap:4px;
+}
+
+.notification-user{
+ font-size:14px;
+ font-weight:bold;
+}
+
+.notification-preview{
+ font-size:12px;
+ opacity:0.9;
+}
+
+.notification-time{
+ font-size:10px;
+ opacity:0.8;
+}
+
+@keyframes slideIn{
+ from{
+  transform:translateX(100%);
+  opacity:0;
+ }
+ to{
+  transform:translateX(0);
+  opacity:1;
+ }
+}
+
+@keyframes slideOut{
+ to{
+  transform:translateX(100%);
+  opacity:0;
+ }
+}
+
+/* ===== PERMISSÃO ===== */
+.permission-banner{
+ position:fixed;
+ bottom:20px;
+ left:20px;
+ right:20px;
+ background:#1c1e22;
+ padding:12px;
+ border-radius:12px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:12px;
+ z-index:299;
+ box-shadow:0 5px 20px #0008;
+}
+
+.permission-banner button{
+ padding:8px 16px;
+ background:linear-gradient(90deg,var(--orange),var(--orange-2));
+ font-weight:600;
+}
+
+/* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar{
   width:10px;
   height:10px;
@@ -233,44 +321,24 @@ button{
 }
 
 ::-webkit-scrollbar-thumb{
-  background:linear-gradient(
-    180deg,
-    var(--orange),
-    var(--orange-2)
-  );
+  background:linear-gradient(180deg,var(--orange),var(--orange-2));
   border-radius:10px;
   border:2px solid #101114;
 }
 
 ::-webkit-scrollbar-thumb:hover{
-  background:linear-gradient(
-    180deg,
-    #ff8f26,
-    #ffa347
-  );
+  background:linear-gradient(180deg,#ff8f26,#ffa347);
 }
 
-/* Firefox */
 *{
   scrollbar-width:thin;
   scrollbar-color: var(--orange) #101114;
 }
- .emoji-panel{
-  position:absolute;
-  bottom:70px;
-  left:10px;
-  background:#1c1e22;
-  padding:10px;
-  border-radius:12px;
-  display:none;
-  flex-direction:column;
-  gap:8px;
-  width:240px;
 
-  max-height:260px;       /* limite de altura */
-  overflow-y:auto;        /* scroll vertical */
-
-  box-shadow:0 10px 20px #0008;
+@media(max-width:560px){
+ .avatar{display:none}
+ .msg{max-width:90%}
+ .notification{min-width:200px; right:10px; top:10px;}
 }
 </style>
 </head>
@@ -290,7 +358,7 @@ button{
 
 <div class="top">
 <div class="logo">
-<img src="files/icon/Tfavicon.png">
+<img src="files/icon/Tfavicon.png" alt="logo">
 </div>
 <h1>taboi - chat</h1>
 </div>
@@ -331,6 +399,9 @@ const MESSAGES=collection(db,"taboi_messages");
 /* ELEMENTOS */
 const feed=document.getElementById("feed");
 const text=document.getElementById("text");
+let lastMessageId = null;
+let notificationSound = null;
+let notificationPermission = false;
 
 /* USER */
 function getUser(){
@@ -341,26 +412,220 @@ window.chooseUser=(u)=>{
  localStorage.setItem("taboi_user",u);
  document.getElementById("userSelect").style.display="none";
  document.getElementById("app").classList.add("visible");
+ // Solicitar permissão de notificação ao escolher usuário
+ requestNotificationPermission();
 };
 
 if(getUser()){
  document.getElementById("userSelect").style.display="none";
  document.getElementById("app").classList.add("visible");
+ requestNotificationPermission();
 }
 
+/* SOLICITAR PERMISSÃO DE NOTIFICAÇÃO */
+async function requestNotificationPermission(){
+ if (!("Notification" in window)) {
+  console.log("Este navegador não suporta notificações");
+  return;
+ }
+ 
+ if (Notification.permission === "granted") {
+  notificationPermission = true;
+  removePermissionBanner();
+ } else if (Notification.permission !== "denied") {
+  showPermissionBanner();
+ }
+}
+
+function showPermissionBanner(){
+ const existing = document.querySelector(".permission-banner");
+ if(existing) return;
+ 
+ const banner = document.createElement("div");
+ banner.className = "permission-banner";
+ banner.innerHTML = `
+  <span>🔔 Receber notificações de novas mensagens?</span>
+  <button id="allowNotifications">Permitir</button>
+ `;
+ document.body.appendChild(banner);
+ 
+ document.getElementById("allowNotifications").onclick = async () => {
+  const permission = await Notification.requestPermission();
+  if (permission === "granted") {
+   notificationPermission = true;
+   removePermissionBanner();
+   showToast("Notificações ativadas! ✅", "success");
+  } else {
+   showToast("Notificações não permitidas ❌", "error");
+  }
+ };
+}
+
+function removePermissionBanner(){
+ const banner = document.querySelector(".permission-banner");
+ if(banner) banner.remove();
+}
+
+/* FUNÇÃO PARA MOSTRAR NOTIFICAÇÃO */
+function showNotification(user, message, timestamp){
+ if (!notificationPermission && Notification.permission === "granted") {
+  notificationPermission = true;
+ }
+ 
+ if (!notificationPermission) return;
+ 
+ const currentUser = getUser();
+ // Não notifica se a mensagem é do próprio usuário
+ if (user === currentUser) return;
+ 
+ // Verifica se o documento está visível
+ if (document.hidden) {
+  // Mostra notificação nativa do navegador
+  const notification = new Notification(`📩 Nova mensagem de ${user}`, {
+   body: message.length > 50 ? message.substring(0, 50) + "..." : message,
+   icon: "files/icon/Tfavicon.png",
+   silent: false,
+  });
+  
+  notification.onclick = () => {
+   window.focus();
+   notification.close();
+  };
+  
+  // Toca som opcional (se disponível)
+  playNotificationSound();
+ } else {
+  // Mostra notificação customizada dentro da página
+  showCustomNotification(user, message, timestamp);
+ }
+}
+
+/* SOM DE NOTIFICAÇÃO */
+function playNotificationSound(){
+ try {
+  const audio = new Audio("data:audio/wav;base64,U3RlYWx0aCBub3RpZmljYXRpb24gc291bmQ=");
+  audio.volume = 0.3;
+  audio.play().catch(e => console.log("Áudio não pôde ser reproduzido"));
+ } catch(e) {
+  console.log("Som não disponível");
+ }
+}
+
+/* NOTIFICAÇÃO CUSTOMIZADA (quando a página está visível) */
+function showCustomNotification(user, message, timestamp){
+ // Remove notificações antigas
+ const oldNotifs = document.querySelectorAll(".notification");
+ oldNotifs.forEach(notif => {
+  notif.style.animation = "slideOut 0.3s ease-out";
+  setTimeout(() => notif.remove(), 300);
+ });
+ 
+ const notif = document.createElement("div");
+ notif.className = "notification";
+ 
+ const preview = message.length > 40 ? message.substring(0, 40) + "..." : message;
+ 
+ notif.innerHTML = `
+  <div class="notification-content">
+   <div class="notification-user">💬 ${user}</div>
+   <div class="notification-preview">${escapeHtml(preview)}</div>
+   <div class="notification-time">${timestamp || "agora"}</div>
+  </div>
+ `;
+ 
+ notif.onclick = () => {
+  notif.style.animation = "slideOut 0.3s ease-out";
+  setTimeout(() => notif.remove(), 300);
+  // Rolar para a última mensagem
+  feed.scrollTop = feed.scrollHeight;
+ };
+ 
+ document.body.appendChild(notif);
+ 
+ // Remove automaticamente após 5 segundos
+ setTimeout(() => {
+  if(notif.parentNode){
+   notif.style.animation = "slideOut 0.3s ease-out";
+   setTimeout(() => notif.remove(), 300);
+  }
+ }, 5000);
+}
+
+/* ESCAPE HTML */
+function escapeHtml(text){
+ const div = document.createElement("div");
+ div.textContent = text;
+ return div.innerHTML;
+}
+
+/* TOAST SIMPLES */
+function showToast(message, type = "info"){
+ const toast = document.createElement("div");
+ toast.style.cssText = `
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: ${type === "success" ? "#4caf50" : "#f44336"};
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+  font-size: 14px;
+ `;
+ toast.textContent = message;
+ document.body.appendChild(toast);
+ setTimeout(() => {
+  toast.style.animation = "slideOut 0.3s ease-out";
+  setTimeout(() => toast.remove(), 300);
+ }, 3000);
+}
+
+/* FORMATAÇÃO DE HORÁRIO */
+function formatTimestamp(timestamp){
+ if(!timestamp) return "agora";
+ 
+ let date;
+ if(timestamp.toDate){
+  date = timestamp.toDate();
+ } else if(timestamp.seconds){
+  date = new Date(timestamp.seconds * 1000);
+ } else {
+  date = new Date(timestamp);
+ }
+ 
+ const now = new Date();
+ const diff = now - date;
+ const diffMinutes = Math.floor(diff / 60000);
+ const diffHours = Math.floor(diff / 3600000);
+ const diffDays = Math.floor(diff / 86400000);
+ 
+ // Hoje
+ if(diffDays === 0){
+  if(diffMinutes < 1) return "agora mesmo";
+  if(diffMinutes < 60) return `há ${diffMinutes} min`;
+  return date.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+ }
+ 
+ // Ontem
+ if(diffDays === 1){
+  return `ontem às ${date.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})}`;
+ }
+ 
+ // Outros dias
+ return date.toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit"}) + 
+        " às " + date.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+}
+
+/* EMOJIS */
 const emojiCategories = {
   "😀 Carinhas": ["😀","😂","😎","😍","🥶","😱","😡","😭","😄","😁","😆","😅","🤣","😊"],
-  
   "👏 Gestos": ["👍","👏","❤️","👊","✌️","🤘","🤙","👌","🤝"],
-  
   "🎉 Objetos": ["🔥","⭐","✨","🎉","🎁","🎈","🎂","💣","💬"],
-  
   "🐶 Animais": ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐸","🐵"],
-  
   "🌍 Natureza": ["🌍","🌙","☀️","🌧️","⛈️","❄️","🌈","🌊"],
-  
   "🚗 Transporte": ["🚗","🚕","🚌","✈️","🚀","🚁"],
-  
   "💻 Tech": ["💻","📱","⌨️","🖥️","🖱️","📷","🎥","🔋","🎮"]
 };
  
@@ -370,11 +635,9 @@ const emojiGrid=document.getElementById("emojiGrid");
 emojiGrid.innerHTML = "";
 
 Object.entries(emojiCategories).forEach(([category, list]) => {
-
   const title = document.createElement("div");
   title.className = "emoji-category";
   title.textContent = category;
-
   emojiGrid.appendChild(title);
 
   const group = document.createElement("div");
@@ -389,46 +652,47 @@ Object.entries(emojiCategories).forEach(([category, list]) => {
     };
     group.appendChild(s);
   });
-
   emojiGrid.appendChild(group);
 });
 
-emojiBtn.onclick = () => {
-  emojiPanel.style.display =
-    emojiPanel.style.display === "flex" ? "none" : "flex";
+document.getElementById("emojiBtn").onclick = () => {
+  emojiPanel.style.display = emojiPanel.style.display === "flex" ? "none" : "flex";
 };
+
 /* LINK */
-linkBtn.onclick=()=>{
- const url=prompt("Cole o link:");
- if(url) text.value+=` ${url} `;
+document.getElementById("linkBtn").onclick = () => {
+ const url = prompt("Cole o link:");
+ if(url) text.value += ` ${url} `;
 };
 
 /* ENVIAR */
-sendBtn.onclick=send;
+document.getElementById("sendBtn").onclick = send;
 
 async function send(){
- const user=getUser();
- if(!user)return alert("Selecione um usuário");
+ const user = getUser();
+ if(!user){
+  showToast("Selecione um usuário primeiro", "error");
+  return;
+ }
 
- const body=text.value.trim();
- if(!body)return;
+ const body = text.value.trim();
+ if(!body) return;
 
- text.value="";
+ text.value = "";
  text.focus();
 
  await addDoc(MESSAGES,{
   body,
   user,
-  ts:serverTimestamp()
+  ts: serverTimestamp()
  });
 
- // 👇 fecha o painel
  emojiPanel.style.display = "none";
 }
 
 /* ENTER ENVIA */
 text.addEventListener("keydown",(e)=>{
- if(e.key==="Enter"&&!e.shiftKey){
+ if(e.key==="Enter" && !e.shiftKey){
   e.preventDefault();
   send();
  }
@@ -436,41 +700,85 @@ text.addEventListener("keydown",(e)=>{
 
 /* LINK CLICKAVEL */
 function linkify(t){
- return t.replace(/(https?:\/\/[^\s]+)/g,
- '<a href="$1" target="_blank">$1</a>');
+ return t.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
 }
 
-/* LISTENER */
-const q=query(MESSAGES,orderBy("ts","asc"),limit(200));
+/* CACHE PARA CONTROLAR NOTIFICAÇÕES */
+let lastProcessedMessages = new Set();
 
-onSnapshot(q,(snap)=>{
- feed.innerHTML="";
- snap.forEach(doc=>{
-  const m=doc.data();
+/* LISTENER */
+const q = query(MESSAGES, orderBy("ts","asc"), limit(200));
+
+onSnapshot(q, (snap) => {
+ const currentUser = getUser();
+ const newMessages = [];
+ 
+ // Processa mudanças
+ snap.docChanges().forEach(change => {
+  if (change.type === "added") {
+   const msgData = change.doc.data();
+   const msgId = change.doc.id;
+   
+   // Se é nova mensagem e não foi processada ainda
+   if (!lastProcessedMessages.has(msgId)) {
+    lastProcessedMessages.add(msgId);
+    newMessages.push({ id: msgId, data: msgData });
+    
+    // Limitar o cache
+    if (lastProcessedMessages.size > 300) {
+     const toDelete = [...lastProcessedMessages][0];
+     lastProcessedMessages.delete(toDelete);
+    }
+   }
+  }
+ });
+ 
+ // Atualiza o feed
+ feed.innerHTML = "";
+ snap.forEach(doc => {
+  const m = doc.data();
   feed.appendChild(messageEl(m));
  });
- feed.scrollTop=feed.scrollHeight;
+ feed.scrollTop = feed.scrollHeight;
+ 
+ // Mostra notificações para novas mensagens (exceto a própria)
+ newMessages.forEach(({ data: m }) => {
+  if (m.user !== currentUser) {
+   const timestampFormatted = formatTimestamp(m.ts);
+   showNotification(m.user, m.body, timestampFormatted);
+  }
+ });
 });
 
 function messageEl(m){
- const mine=m.user===getUser();
+ const currentUser = getUser();
+ const mine = m.user === currentUser;
 
- const wrap=document.createElement("div");
- wrap.className="msg"+(mine?" me":"");
+ const wrap = document.createElement("div");
+ wrap.className = "msg" + (mine ? " me" : "");
 
- const av=document.createElement("div");
- av.className="avatar";
- av.textContent=m.user[0];
+ const av = document.createElement("div");
+ av.className = "avatar";
+ av.textContent = m.user ? m.user[0] : "?";
 
- const right=document.createElement("div");
+ const right = document.createElement("div");
 
- const bubble=document.createElement("div");
- bubble.className="bubble";
- bubble.innerHTML=linkify(m.body);
+ const bubble = document.createElement("div");
+ bubble.className = "bubble";
+ bubble.innerHTML = linkify(escapeHtml(m.body));
 
- const meta=document.createElement("div");
- meta.className="meta";
- meta.textContent=m.user;
+ const meta = document.createElement("div");
+ meta.className = "meta";
+ 
+ const userNameSpan = document.createElement("span");
+ userNameSpan.textContent = m.user || "Anônimo";
+ 
+ const timeSpan = document.createElement("span");
+ timeSpan.className = "timestamp";
+ timeSpan.textContent = formatTimestamp(m.ts);
+ 
+ meta.appendChild(userNameSpan);
+ meta.appendChild(timeSpan);
 
  right.appendChild(bubble);
  right.appendChild(meta);
@@ -480,17 +788,48 @@ function messageEl(m){
 
  return wrap;
 }
- document.addEventListener("click", (e) => {
 
-  const isClickInside =
-    emojiPanel.contains(e.target) ||
-    emojiBtn.contains(e.target);
-
-  if (!isClickInside) {
-    emojiPanel.style.display = "none";
-  }
-
+/* FECHAR EMOJI PANEL AO CLICAR FORA */
+document.addEventListener("click", (e) => {
+ const emojiPanel = document.getElementById("emojiPanel");
+ const emojiBtn = document.getElementById("emojiBtn");
+ const isClickInside = emojiPanel.contains(e.target) || emojiBtn.contains(e.target);
+ if (!isClickInside && emojiPanel.style.display === "flex") {
+  emojiPanel.style.display = "none";
+ }
 });
+
+/* DETECTAR QUANDO A PÁGINA GANHA FOCO PARA ATUALIZAR TÍTULO */
+let unreadCount = 0;
+let originalTitle = document.title;
+
+document.addEventListener("visibilitychange", () => {
+ if (!document.hidden) {
+  // Página visível, resetar contador e título
+  unreadCount = 0;
+  document.title = originalTitle;
+ } else {
+  originalTitle = document.title;
+ }
+});
+
+/* ATUALIZAR TÍTULO COM CONTADOR DE NÃO LIDAS */
+function updateTitleWithUnread(count){
+ if (document.hidden && count > 0) {
+  document.title = `(${count}) ${originalTitle}`;
+ } else {
+  document.title = originalTitle;
+ }
+}
+
+// Incrementar contador quando receber mensagem (apenas se página invisível)
+let lastMessageTimestamp = 0;
+
+setInterval(() => {
+ if (document.hidden && unreadCount > 0) {
+  updateTitleWithUnread(unreadCount);
+ }
+}, 1000);
 </script>
 
 </body>
