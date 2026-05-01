@@ -2,411 +2,492 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Taboi · chat v3</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Taboi - chat v3</title>
 <link rel="icon" href="files/icon/favicon.ico">
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+:root{
+ --orange:#ff7a00;
+ --orange-2:#ff8f26;
+ --card:#17181b;
+ --text:#eaeaea;
+ --muted:#a8a8a8;
+ --mine:#23252a;
+ --error:#f44336;
+ --success:#4caf50;
 }
 
-:root {
-  --orange: #ff7a00;
-  --orange-2: #ff8f26;
-  --card: #17181b;
-  --text: #eaeaea;
-  --muted: #a8a8a8;
-  --mine: #23252a;
-  --danger: #e5484d;
+*{box-sizing:border-box}
+
+body{
+ margin:0;
+ background:#0b0b0b;
+ font-family:system-ui;
+ color:var(--text);
+ height:100vh;
+ display:grid;
+ place-items:center;
 }
 
-body {
-  background: #0b0b0b;
-  font-family: system-ui, 'Segoe UI', sans-serif;
-  color: var(--text);
-  height: 100vh;
-  display: grid;
-  place-items: center;
-  margin: 0;
+/* ===== MODAL GENERICO ===== */
+.modal-overlay{
+ position:fixed;
+ inset:0;
+ background:rgba(0,0,0,0.8);
+ backdrop-filter:blur(8px);
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ z-index:1000;
+ animation:fadeIn 0.3s ease-out;
 }
 
-/* === MODAL GLOBAL (reutilizável) === */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.2s ease;
+.modal{
+ background:linear-gradient(135deg, #1a1c22, #131518);
+ border-radius:24px;
+ padding:32px;
+ max-width:420px;
+ width:90%;
+ box-shadow:0 20px 40px rgba(0,0,0,0.5);
+ border:1px solid rgba(255,122,0,0.2);
+ animation:slideUp 0.3s ease-out;
 }
 
-.modal-container {
-  background: #1e1f24;
-  border-radius: 28px;
-  max-width: 400px;
-  width: 90%;
-  padding: 24px 20px 28px;
-  box-shadow: 0 25px 40px rgba(0,0,0,0.5);
-  text-align: center;
-  border: 1px solid rgba(255,125,0,0.3);
+.modal h2{
+ margin:0 0 12px 0;
+ background:linear-gradient(90deg,var(--orange),var(--orange-2));
+ -webkit-background-clip:text;
+ background-clip:text;
+ color:transparent;
+ font-size:28px;
 }
 
-.modal-container h3 {
-  font-size: 1.6rem;
-  margin-bottom: 12px;
-  background: linear-gradient(135deg, var(--orange), var(--orange-2));
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
+.modal p{
+ color:var(--muted);
+ margin-bottom:24px;
+ line-height:1.5;
 }
 
-.modal-container p {
-  color: var(--muted);
-  margin-bottom: 24px;
-  font-size: 0.9rem;
+.modal-input{
+ width:100%;
+ padding:14px;
+ background:#0b0d10;
+ border:2px solid #2a2c32;
+ border-radius:12px;
+ color:var(--text);
+ font-size:16px;
+ margin-bottom:20px;
+ transition:border-color 0.2s;
 }
 
-.modal-input {
-  width: 100%;
-  padding: 14px 16px;
-  background: #0f0f12;
-  border: 1px solid #2f3138;
-  border-radius: 60px;
-  color: white;
-  font-size: 1rem;
-  margin-bottom: 20px;
-  outline: none;
-  transition: 0.2s;
+.modal-input:focus{
+ outline:none;
+ border-color:var(--orange);
 }
 
-.modal-input:focus {
-  border-color: var(--orange);
+.modal-buttons{
+ display:flex;
+ gap:12px;
+ justify-content:flex-end;
 }
 
-.modal-buttons {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
+.modal-btn{
+ padding:10px 24px;
+ border:none;
+ border-radius:10px;
+ font-weight:600;
+ cursor:pointer;
+ transition:transform 0.1s;
 }
 
-.modal-btn {
-  padding: 10px 20px;
-  border-radius: 60px;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: 0.2s;
-  font-size: 0.9rem;
+.modal-btn-primary{
+ background:linear-gradient(90deg,var(--orange),var(--orange-2));
+ color:#111;
 }
 
-.modal-btn.primary {
-  background: linear-gradient(90deg, var(--orange), var(--orange-2));
-  color: #111;
+.modal-btn-secondary{
+ background:#2a2c32;
+ color:var(--text);
 }
 
-.modal-btn.secondary {
-  background: #2c2e36;
-  color: #ddd;
+.modal-btn:hover{
+ transform:translateY(-1px);
 }
 
-.modal-btn.primary:hover {
-  opacity: 0.9;
-  transform: scale(0.97);
+.modal-error{
+ background:rgba(244,67,54,0.1);
+ border:1px solid var(--error);
+ color:var(--error);
+ padding:10px;
+ border-radius:8px;
+ margin-bottom:16px;
+ font-size:14px;
+ text-align:center;
 }
 
-/* === APP LAYOUT === */
-.app {
-  width: min(1000px, 96%);
-  height: min(820px, 94vh);
-  display: flex;
-  flex-direction: column;
-  background: var(--card);
-  border-radius: 28px;
-  overflow: hidden;
-  box-shadow: 0 20px 35px rgba(0,0,0,0.6);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+@keyframes fadeIn{
+ from{opacity:0}
+ to{opacity:1}
 }
 
-.app.visible {
-  opacity: 1;
+@keyframes slideUp{
+ from{
+  transform:translateY(30px);
+  opacity:0;
+ }
+ to{
+  transform:translateY(0);
+  opacity:1;
+ }
 }
 
-/* header */
-.top {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 18px;
-  background: linear-gradient(90deg, var(--orange), var(--orange-2));
-  color: #111;
-  font-weight: bold;
+/* ===== APP ===== */
+.app{
+ width:min(900px,100%);
+ height:min(780px,100vh);
+ display:flex;
+ flex-direction:column;
+ background:var(--card);
+ border-radius:18px;
+ overflow:hidden;
+ opacity:0;
+ transition:.4s;
+}
+.app.visible{opacity:1}
+
+/* ===== HEADER ===== */
+.top{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ padding:6px 12px;
+ height:48px;
+ background:linear-gradient(90deg,var(--orange),var(--orange-2));
+ color:#111;
 }
 
-.logo img {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
+.top h1{
+ margin:0;
+ font-size:16px;
+ line-height:1;
 }
 
-.top h1 {
-  font-size: 1.3rem;
-  letter-spacing: -0.3px;
+.logo img{
+ width:28px;
+ height:28px;
+ object-fit:contain;
 }
 
-/* feed messages */
-.feed {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 14px;
-  background: #111216;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.user-info{
+ margin-left:auto;
+ font-size:14px;
+ font-weight:600;
+ background:rgba(0,0,0,0.2);
+ padding:4px 12px;
+ border-radius:20px;
 }
 
-.msg {
-  display: flex;
-  gap: 10px;
-  max-width: 80%;
-  align-items: flex-start;
+/* ===== FEED ===== */
+.feed{
+ flex:1;
+ overflow:auto;
+ padding:14px;
+ background:#15161a;
 }
 
-.msg.me {
-  margin-left: auto;
-  flex-direction: row-reverse;
+.msg{
+ display:flex;
+ gap:10px;
+ margin:6px 0;
+ max-width:78%;
 }
 
-.avatar {
-  min-width: 36px;
-  height: 36px;
-  background: #2b2e36;
-  border-radius: 40px;
-  display: grid;
-  place-items: center;
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--orange-2);
+.msg.me{
+ margin-left:auto;
+ flex-direction:row-reverse;
 }
 
-.bubble {
-  background: var(--mine);
-  padding: 10px 14px;
-  border-radius: 20px;
-  line-height: 1.4;
-  word-break: break-word;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+.avatar{
+ min-width:34px;
+ height:34px;
+ border-radius:50%;
+ background:#2b2d33;
+ display:grid;
+ place-items:center;
+ font-weight:700;
 }
 
-.bubble a {
-  color: #ffae5d;
-  text-decoration: underline;
+.bubble{
+ background:var(--mine);
+ padding:10px 12px;
+ border-radius:16px;
+ box-shadow:0 3px 10px #0006;
+ white-space:pre-wrap;
+ overflow-wrap:anywhere;
+ word-break:break-word;
 }
 
-.media-preview {
-  margin-top: 6px;
-  max-width: 240px;
-  border-radius: 16px;
-  overflow: hidden;
-  background: #0a0a0c;
+.bubble a{
+ color:#ffae5d;
+ text-decoration:underline;
 }
 
-.media-preview img, 
-.media-preview video {
-  max-width: 100%;
-  max-height: 200px;
-  border-radius: 12px;
-  display: block;
+.meta{
+ font-size:11px;
+ color:var(--muted);
+ margin-top:4px;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:8px;
 }
 
-.file-doc {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #2c2f38;
-  padding: 6px 12px;
-  border-radius: 30px;
-  font-size: 0.8rem;
+.timestamp{
+ font-size:10px;
+ opacity:0.7;
 }
 
-.meta {
-  font-size: 10px;
-  color: var(--muted);
-  margin-top: 5px;
-  display: flex;
-  gap: 12px;
-  align-items: baseline;
+/* ===== INPUT ===== */
+.input{
+ display:flex;
+ gap:6px;
+ padding:10px;
+ background:#101114;
+ position:relative;
 }
 
-/* input area */
-.input-area {
-  background: #101114;
-  padding: 12px 14px;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  border-top: 1px solid #25282e;
-  position: relative;
-  flex-wrap: wrap;
+textarea{
+ flex:1;
+ height:44px;
+ border-radius:10px;
+ border:1px solid #2a2c32;
+ background:#15171c;
+ color:#fff;
+ padding:10px;
+ resize:none;
+ font-family:system-ui;
 }
 
-.file-actions {
-  display: flex;
-  gap: 6px;
+button{
+ border:0;
+ border-radius:10px;
+ cursor:pointer;
+ transition:transform 0.1s;
 }
 
-.tool-btn {
-  background: #1f2128;
-  border: none;
-  border-radius: 30px;
-  width: 42px;
-  height: 42px;
-  font-size: 1.4rem;
-  cursor: pointer;
-  color: #ffaa55;
-  transition: 0.1s;
+button:hover{
+ transform:scale(1.02);
 }
 
-.tool-btn:hover {
-  background: #2c2f38;
+.send{
+ background:linear-gradient(90deg,var(--orange),var(--orange-2));
+ font-weight:700;
+ padding:0 14px;
 }
 
-.text-input {
-  flex: 1;
-  background: #1a1c22;
-  border: 1px solid #2a2d34;
-  border-radius: 28px;
-  padding: 10px 16px;
-  color: white;
-  font-family: inherit;
-  resize: none;
-  font-size: 0.95rem;
-  outline: none;
-  max-height: 80px;
+.tool{
+ width:40px;
+ background:#1f2126;
+ color:#fff;
 }
 
-.send-btn {
-  background: linear-gradient(90deg, var(--orange), var(--orange-2));
-  border: none;
-  border-radius: 32px;
-  padding: 0 20px;
-  font-weight: bold;
-  height: 42px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  color: #111;
+/* ===== EMOJIS ===== */
+.emoji-panel{
+ position:absolute;
+ bottom:70px;
+ left:10px;
+ background:#1c1e22;
+ padding:10px;
+ border-radius:12px;
+ display:none;
+ flex-direction:column;
+ gap:8px;
+ width:240px;
+ max-height:260px;
+ overflow-y:auto;
+ box-shadow:0 10px 20px #0008;
+ z-index:100;
 }
 
-/* emoji panel */
-.emoji-panel {
-  position: absolute;
-  bottom: 70px;
-  left: 12px;
-  background: #1e2027;
-  border-radius: 20px;
-  padding: 12px;
-  width: 280px;
-  max-height: 280px;
-  overflow-y: auto;
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 200;
-  box-shadow: 0 10px 25px black;
+.emoji-grid{
+ display:flex;
+ flex-wrap:wrap;
+ gap:6px;
 }
 
-.emoji-category {
-  font-size: 11px;
-  color: #aaa;
-  margin: 6px 0 4px;
+.emoji-category{
+ font-size:12px;
+ color:#aaa;
+ margin:6px 0 2px;
+}
+ 
+.emoji-panel span{
+ cursor:pointer;
+ font-size:20px;
+ transition:transform 0.1s;
 }
 
-.emoji-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.emoji-panel span:hover{
+ transform:scale(1.2);
 }
 
-.emoji-grid span {
-  cursor: pointer;
-  font-size: 22px;
-  transition: 0.05s linear;
+/* ===== NOTIFICAÇÃO ===== */
+.notification{
+ position:fixed;
+ top:20px;
+ right:20px;
+ background:linear-gradient(135deg, var(--orange), var(--orange-2));
+ color:#111;
+ padding:12px 20px;
+ border-radius:12px;
+ box-shadow:0 5px 20px rgba(0,0,0,0.3);
+ display:flex;
+ align-items:center;
+ gap:12px;
+ z-index:1000;
+ animation: slideIn 0.3s ease-out;
+ cursor:pointer;
+ font-weight:600;
+ min-width:250px;
+ backdrop-filter:blur(10px);
 }
 
-.emoji-grid span:hover {
-  transform: scale(1.2);
+.notification-content{
+ display:flex;
+ flex-direction:column;
+ gap:4px;
 }
 
-/* notificação customizada (flutuante) */
-.notif-toast {
-  position: fixed;
-  top: 18px;
-  right: 18px;
-  background: #1f2129ee;
-  backdrop-filter: blur(12px);
-  border-left: 5px solid var(--orange);
-  border-radius: 16px;
-  padding: 12px 18px;
-  min-width: 240px;
-  max-width: 320px;
-  z-index: 1100;
-  animation: slideRight 0.25s ease;
-  box-shadow: 0 12px 20px rgba(0,0,0,0.4);
-  cursor: pointer;
-  color: white;
+.notification-user{
+ font-size:14px;
+ font-weight:bold;
 }
 
-.notif-title {
-  font-weight: bold;
-  font-size: 0.85rem;
-  color: var(--orange-2);
+.notification-preview{
+ font-size:12px;
+ opacity:0.9;
 }
 
-.notif-msg {
-  font-size: 0.8rem;
-  margin-top: 4px;
-  word-break: break-word;
+.notification-time{
+ font-size:10px;
+ opacity:0.8;
 }
 
-@keyframes slideRight {
-  from { transform: translateX(120%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+@keyframes slideIn{
+ from{
+  transform:translateX(100%);
+  opacity:0;
+ }
+ to{
+  transform:translateX(0);
+  opacity:1;
+ }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@keyframes slideOut{
+ to{
+  transform:translateX(100%);
+  opacity:0;
+ }
 }
 
-/* scroll */
-::-webkit-scrollbar {
-  width: 6px;
+/* ===== TOAST ===== */
+.toast{
+ position:fixed;
+ bottom:20px;
+ left:50%;
+ transform:translateX(-50%);
+ padding:12px 24px;
+ border-radius:12px;
+ z-index:1000;
+ animation:slideIn 0.3s ease-out;
+ font-size:14px;
+ font-weight:500;
+ box-shadow:0 5px 20px rgba(0,0,0,0.3);
 }
-::-webkit-scrollbar-track {
-  background: #101114;
+
+.toast-success{
+ background:linear-gradient(135deg, var(--success), #45a049);
+ color:white;
 }
-::-webkit-scrollbar-thumb {
-  background: var(--orange);
-  border-radius: 10px;
+
+.toast-error{
+ background:linear-gradient(135deg, var(--error), #d32f2f);
+ color:white;
+}
+
+.toast-info{
+ background:linear-gradient(135deg, var(--orange), var(--orange-2));
+ color:#111;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{
+  width:10px;
+  height:10px;
+}
+
+::-webkit-scrollbar-track{
+  background:#101114;
+  border-radius:10px;
+}
+
+::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,var(--orange),var(--orange-2));
+  border-radius:10px;
+  border:2px solid #101114;
+}
+
+::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(180deg,#ff8f26,#ffa347);
+}
+
+*{
+  scrollbar-width:thin;
+  scrollbar-color: var(--orange) #101114;
+}
+
+@media(max-width:560px){
+ .avatar{display:none}
+ .msg{max-width:90%}
+ .notification{min-width:200px; right:10px; top:10px;}
+ .modal{padding:24px; margin:16px;}
+ .modal h2{font-size:24px;}
 }
 </style>
 </head>
+
 <body>
 
-<div class="app" id="app"></div>
+<div class="app" id="app">
+<div class="top">
+<div class="logo">
+<img src="files/icon/Tfavicon.png" alt="logo">
+</div>
+<h1>taboi - chat v3</h1>
+<div class="user-info" id="userInfo"></div>
+</div>
+
+<div id="feed" class="feed"></div>
+
+<div class="input">
+<button class="tool" id="emojiBtn">😀</button>
+<button class="tool" id="linkBtn">🔗</button>
+<textarea id="text" placeholder="Digite sua mensagem..."></textarea>
+<button class="send" id="sendBtn">Enviar</button>
+
+<div class="emoji-panel" id="emojiPanel">
+<div class="emoji-grid" id="emojiGrid"></div>
+</div>
+</div>
+</div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, limit } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-storage.js";
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import{getFirestore,collection,addDoc,serverTimestamp,query,orderBy,onSnapshot,limit}from"https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-// ========== FIREBASE CONFIG ==========
+/* FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyD6qPIIX4i8n0e7mm31y2D2Pb1B26NogGM",
   authDomain: "taboi-v2.firebaseapp.com",
@@ -416,405 +497,531 @@ const firebaseConfig = {
   appId: "1:774936620311:web:f6440002476c7cd9c2db52"
 };
 
-const fbApp = initializeApp(firebaseConfig);
-const db = getFirestore(fbApp);
-const storage = getStorage(fbApp);
-const MESSAGES_COL = collection(db, "taboi_messages");
+const appFB=initializeApp(firebaseConfig);
+const db=getFirestore(appFB);
+const MESSAGES=collection(db,"taboi_messages");
 
-// ========== GLOBAL STATE ==========
-let currentUser = null;      // { nome, codigo }
-let notificationPerm = false;
-let lastMsgIds = new Set();
-let feedElement, textarea, sendBtn, emojiPanel, emojiBtn;
+/* ACCOUNTS DATA */
+let accountsData = null;
+let currentUser = null;
 
-// ========== ACCOUNTS JSON (embedded accounts) ==========
-const ACCOUNTS_DB = {
-  "Vicente": "55946071",
-  "Lucca": "89679091",
-  "Francisco": "90647323",
-  "Mariana": "MARILOVE",
+/* ELEMENTOS */
+const feed=document.getElementById("feed");
+const text=document.getElementById("text");
+const userInfoSpan = document.getElementById("userInfo");
+let lastProcessedMessages = new Set();
+let notificationPermission = false;
+let unreadCount = 0;
+let originalTitle = document.title;
+
+/* ===== CARREGAR ACCOUNTS.JSON ===== */
+async function loadAccounts() {
+ try {
+  const response = await fetch('accounts.json');
+  if (!response.ok) {
+   throw new Error('Arquivo accounts.json não encontrado');
+  }
+  accountsData = await response.json();
+  console.log('Accounts carregadas:', accountsData);
+ } catch (error) {
+  console.error('Erro ao carregar accounts:', error);
+  // Dados de fallback caso o arquivo não exista
+  accountsData = {
+   "users": [
+    { "code": "VIC123", "name": "Vicente", "avatar": "V" },
+    { "code": "LUC456", "name": "Lucca", "avatar": "L" },
+    { "code": "FRA789", "name": "Francisco", "avatar": "F" },
+    { "code": "MAR012", "name": "Mariana", "avatar": "M" }
+   ]
+  };
+ }
+}
+
+/* ===== MODAL DE LOGIN ===== */
+function showLoginModal() {
+ const modalOverlay = document.createElement('div');
+ modalOverlay.className = 'modal-overlay';
+ 
+ modalOverlay.innerHTML = `
+  <div class="modal">
+   <h2>🔐 Login</h2>
+   <p>Digite o código de acesso fornecido pelo administrador para entrar no chat.</p>
+   <input type="text" class="modal-input" id="loginCode" placeholder="Código de acesso" autocomplete="off">
+   <div id="loginError" class="modal-error" style="display:none;"></div>
+   <div class="modal-buttons">
+    <button class="modal-btn modal-btn-primary" id="loginBtn">Entrar</button>
+   </div>
+  </div>
+ `;
+ 
+ document.body.appendChild(modalOverlay);
+ 
+ const input = modalOverlay.querySelector('#loginCode');
+ const loginBtn = modalOverlay.querySelector('#loginBtn');
+ const errorDiv = modalOverlay.querySelector('#loginError');
+ 
+ input.focus();
+ 
+ function attemptLogin() {
+  const code = input.value.trim().toUpperCase();
+  if (!code) {
+   showError('Por favor, digite o código de acesso');
+   return;
+  }
+  
+  // Buscar usuário pelo código
+  const user = accountsData.users.find(u => u.code === code);
+  
+  if (user) {
+   currentUser = user.name;
+   localStorage.setItem('taboi_user', currentUser);
+   localStorage.setItem('taboi_code', code);
+   modalOverlay.remove();
+   showApp();
+   showToast(`Bem-vindo, ${currentUser}! ✅`, 'success');
+   // Após login, solicitar permissão de notificação
+   setTimeout(() => {
+    requestNotificationPermission();
+   }, 500);
+  } else {
+   showError('Código inválido! Verifique com o administrador.');
+  }
+ }
+ 
+ function showError(message) {
+  errorDiv.textContent = message;
+  errorDiv.style.display = 'block';
+  input.style.borderColor = '#f44336';
+  setTimeout(() => {
+   errorDiv.style.display = 'none';
+   input.style.borderColor = '#2a2c32';
+  }, 3000);
+ }
+ 
+ loginBtn.onclick = attemptLogin;
+ 
+ input.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+   attemptLogin();
+  }
+ });
+}
+
+/* ===== MODAL DE PERMISSÃO DE NOTIFICAÇÃO ===== */
+function showNotificationPermissionModal() {
+ return new Promise((resolve) => {
+  const modalOverlay = document.createElement('div');
+  modalOverlay.className = 'modal-overlay';
+  
+  modalOverlay.innerHTML = `
+   <div class="modal">
+    <h2>🔔 Ativar Notificações</h2>
+    <p>Receba alertas em tempo real quando alguém enviar uma nova mensagem no chat. Você pode ativar ou desativar isso a qualquer momento nas configurações do navegador.</p>
+    <div class="modal-buttons">
+     <button class="modal-btn modal-btn-secondary" id="notifNo">Não, obrigado</button>
+     <button class="modal-btn modal-btn-primary" id="notifYes">Sim, ativar</button>
+    </div>
+   </div>
+  `;
+  
+  document.body.appendChild(modalOverlay);
+  
+  const yesBtn = modalOverlay.querySelector('#notifYes');
+  const noBtn = modalOverlay.querySelector('#notifNo');
+  
+  yesBtn.onclick = async () => {
+   modalOverlay.remove();
+   const permission = await Notification.requestPermission();
+   const granted = permission === 'granted';
+   if (granted) {
+    notificationPermission = true;
+    showToast('Notificações ativadas! 🔔', 'success');
+   } else {
+    showToast('Notificações não permitidas', 'info');
+   }
+   resolve(granted);
+  };
+  
+  noBtn.onclick = () => {
+   modalOverlay.remove();
+   notificationPermission = false;
+   showToast('Notificações desativadas', 'info');
+   resolve(false);
+  };
+ });
+}
+
+/* ===== SOLICITAR PERMISSÃO COM MODAL ===== */
+async function requestNotificationPermission() {
+ if (!("Notification" in window)) {
+  console.log("Este navegador não suporta notificações");
+  return;
+ }
+ 
+ if (Notification.permission === "granted") {
+  notificationPermission = true;
+ } else if (Notification.permission !== "denied") {
+  await showNotificationPermissionModal();
+ } else {
+  notificationPermission = false;
+ }
+}
+
+/* ===== EXIBIR APP ===== */
+function showApp() {
+ document.getElementById('app').classList.add('visible');
+ updateUserInfo();
+}
+
+function updateUserInfo() {
+ if (currentUser) {
+  userInfoSpan.textContent = `👤 ${currentUser}`;
+ }
+}
+
+/* ===== FUNÇÃO PARA MOSTRAR NOTIFICAÇÃO ===== */
+function showNotification(user, message, timestamp){
+ if (!notificationPermission && Notification.permission !== "granted") return;
+ if (user === currentUser) return;
+ 
+ if (document.hidden) {
+  const notification = new Notification(`📩 Nova mensagem de ${user}`, {
+   body: message.length > 60 ? message.substring(0, 60) + "..." : message,
+   icon: "files/icon/Tfavicon.png",
+   silent: false,
+  });
+  
+  notification.onclick = () => {
+   window.focus();
+   notification.close();
+  };
+  
+  playNotificationSound();
+  updateUnreadCount(1);
+ } else {
+  showCustomNotification(user, message, timestamp);
+ }
+}
+
+function playNotificationSound() {
+ try {
+  const audio = new Audio("data:audio/wav;base64,U3RlYWx0aCBub3RpZmljYXRpb24gc291bmQ=");
+  audio.volume = 0.3;
+  audio.play().catch(e => console.log("Áudio não pôde ser reproduzido"));
+ } catch(e) {
+  console.log("Som não disponível");
+ }
+}
+
+function showCustomNotification(user, message, timestamp){
+ const oldNotifs = document.querySelectorAll(".notification");
+ oldNotifs.forEach(notif => {
+  notif.style.animation = "slideOut 0.3s ease-out";
+  setTimeout(() => notif.remove(), 300);
+ });
+ 
+ const notif = document.createElement("div");
+ notif.className = "notification";
+ const preview = message.length > 50 ? message.substring(0, 50) + "..." : message;
+ 
+ notif.innerHTML = `
+  <div class="notification-content">
+   <div class="notification-user">💬 ${user}</div>
+   <div class="notification-preview">${escapeHtml(preview)}</div>
+   <div class="notification-time">${timestamp || "agora"}</div>
+  </div>
+ `;
+ 
+ notif.onclick = () => {
+  notif.style.animation = "slideOut 0.3s ease-out";
+  setTimeout(() => notif.remove(), 300);
+  feed.scrollTop = feed.scrollHeight;
+ };
+ 
+ document.body.appendChild(notif);
+ 
+ setTimeout(() => {
+  if(notif.parentNode){
+   notif.style.animation = "slideOut 0.3s ease-out";
+   setTimeout(() => notif.remove(), 300);
+  }
+ }, 5000);
+}
+
+function updateUnreadCount(increment) {
+ if (document.hidden) {
+  unreadCount += increment;
+  document.title = `(${unreadCount}) ${originalTitle}`;
+ }
+}
+
+/* ===== ESCAPE HTML ===== */
+function escapeHtml(text){
+ const div = document.createElement("div");
+ div.textContent = text;
+ return div.innerHTML;
+}
+
+/* ===== TOAST ===== */
+function showToast(message, type = "info"){
+ const toast = document.createElement("div");
+ toast.className = `toast toast-${type}`;
+ toast.textContent = message;
+ document.body.appendChild(toast);
+ setTimeout(() => {
+  toast.style.animation = "slideOut 0.3s ease-out";
+  setTimeout(() => toast.remove(), 300);
+ }, 3000);
+}
+
+/* ===== FORMATAÇÃO DE HORÁRIO ===== */
+function formatTimestamp(timestamp){
+ if(!timestamp) return "agora";
+ 
+ let date;
+ if(timestamp.toDate){
+  date = timestamp.toDate();
+ } else if(timestamp.seconds){
+  date = new Date(timestamp.seconds * 1000);
+ } else {
+  date = new Date(timestamp);
+ }
+ 
+ const now = new Date();
+ const diff = now - date;
+ const diffMinutes = Math.floor(diff / 60000);
+ const diffHours = Math.floor(diff / 3600000);
+ const diffDays = Math.floor(diff / 86400000);
+ 
+ if(diffDays === 0){
+  if(diffMinutes < 1) return "agora mesmo";
+  if(diffMinutes < 60) return `há ${diffMinutes} min`;
+  return date.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+ }
+ 
+ if(diffDays === 1){
+  return `ontem às ${date.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})}`;
+ }
+ 
+ return date.toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit"}) + 
+        " às " + date.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+}
+
+/* ===== EMOJIS ===== */
+const emojiCategories = {
+  "😀 Carinhas": ["😀","😂","😎","😍","🥶","😱","😡","😭","😄","😁","😆","😅","🤣","😊"],
+  "👏 Gestos": ["👍","👏","❤️","👊","✌️","🤘","🤙","👌","🤝"],
+  "🎉 Objetos": ["🔥","⭐","✨","🎉","🎁","🎈","🎂","💣","💬"],
+  "🐶 Animais": ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐸","🐵"],
+  "🌍 Natureza": ["🌍","🌙","☀️","🌧️","⛈️","❄️","🌈","🌊"],
+  "🚗 Transporte": ["🚗","🚕","🚌","✈️","🚀","🚁"],
+  "💻 Tech": ["💻","📱","⌨️","🖥️","🖱️","📷","🎥","🔋","🎮"]
+};
+ 
+const emojiPanel=document.getElementById("emojiPanel");
+const emojiGrid=document.getElementById("emojiGrid");
+
+emojiGrid.innerHTML = "";
+
+Object.entries(emojiCategories).forEach(([category, list]) => {
+  const title = document.createElement("div");
+  title.className = "emoji-category";
+  title.textContent = category;
+  emojiGrid.appendChild(title);
+
+  const group = document.createElement("div");
+  group.className = "emoji-grid";
+
+  list.forEach(e => {
+    const s = document.createElement("span");
+    s.textContent = e;
+    s.onclick = () => {
+      text.value += e;
+      text.focus();
+    };
+    group.appendChild(s);
+  });
+  emojiGrid.appendChild(group);
+});
+
+document.getElementById("emojiBtn").onclick = () => {
+  emojiPanel.style.display = emojiPanel.style.display === "flex" ? "none" : "flex";
 };
 
-// ========== FUNÇÕES AUX ==========
-function escapeHtml(str) {
-  if (!str) return "";
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
-}
+/* ===== LINK ===== */
+document.getElementById("linkBtn").onclick = () => {
+ const url = prompt("Cole o link:");
+ if(url && url.trim()) {
+  text.value += ` ${url.trim()} `;
+  text.focus();
+ }
+};
 
-function formatTimestamp(ts) {
-  if (!ts) return "agora";
-  let date;
-  if (ts?.toDate) date = ts.toDate();
-  else if (ts?.seconds) date = new Date(ts.seconds * 1000);
-  else date = new Date(ts);
-  const now = new Date();
-  const diff = now - date;
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "agora";
-  if (minutes < 60) return `${minutes} min`;
-  if (diff < 86400000) return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-}
+/* ===== ENVIAR MENSAGEM ===== */
+document.getElementById("sendBtn").onclick = send;
 
-function linkify(text) {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  return text.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
-}
+async function send(){
+ if(!currentUser){
+  showToast("Faça login primeiro", "error");
+  return;
+ }
 
-function showNativeNotification(senderName, content, type = "message") {
-  if (!notificationPerm && Notification.permission !== "granted") return;
-  if (document.hasFocus() && type === "message") return; // se página visível usa toast personalizado
-  if (!document.hasFocus() && Notification.permission === "granted") {
-    const notif = new Notification(`📩 ${senderName}`, {
-      body: content.length > 70 ? content.substr(0, 70) + "..." : content,
-      icon: "files/icon/Tfavicon.png",
-      silent: false
-    });
-    notif.onclick = () => window.focus();
-  }
-}
+ const body = text.value.trim();
+ if(!body) return;
 
-function showInAppToast(sender, text) {
-  const existing = document.querySelector(".notif-toast");
-  if (existing) existing.remove();
-  const toast = document.createElement("div");
-  toast.className = "notif-toast";
-  toast.innerHTML = `<div class="notif-title">💬 ${escapeHtml(sender)}</div><div class="notif-msg">${escapeHtml(text.length > 50 ? text.slice(0,50)+"..." : text)}</div>`;
-  toast.onclick = () => { toast.remove(); document.querySelector(".feed")?.scrollTo({ top: 999999, behavior: "smooth" }); };
-  document.body.appendChild(toast);
-  setTimeout(() => toast?.remove(), 4800);
-}
+ text.value = "";
+ text.focus();
 
-// ========== MODAL CENTRAL (permissão de notificação) ==========
-function showNotificationPermissionModal() {
-  return new Promise((resolve) => {
-    const overlay = document.createElement("div");
-    overlay.className = "modal-overlay";
-    overlay.innerHTML = `
-      <div class="modal-container">
-        <h3>🔔 Ativar notificações</h3>
-        <p>Receba alertas quando alguém enviar mensagens, mesmo com o chat fechado.</p>
-        <div class="modal-buttons">
-          <button class="modal-btn primary" id="modal-allow">✅ Sim, ativar</button>
-          <button class="modal-btn secondary" id="modal-deny">❌ Não, obrigado</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-    const allowBtn = overlay.querySelector("#modal-allow");
-    const denyBtn = overlay.querySelector("#modal-deny");
-    allowBtn.onclick = async () => {
-      const result = await Notification.requestPermission();
-      notificationPerm = result === "granted";
-      overlay.remove();
-      resolve(notificationPerm);
-      if (notificationPerm) showInAppToast("Sistema", "Notificações ativadas! ✅");
-    };
-    denyBtn.onclick = () => {
-      notificationPerm = false;
-      overlay.remove();
-      resolve(false);
-    };
+ try {
+  await addDoc(MESSAGES,{
+   body,
+   user: currentUser,
+   ts: serverTimestamp()
   });
+ } catch(error) {
+  console.error("Erro ao enviar:", error);
+  showToast("Erro ao enviar mensagem", "error");
+ }
+
+ emojiPanel.style.display = "none";
 }
 
-// ========== MODAL LOGIN (código de acesso) ==========
-function showLoginModal() {
-  return new Promise((resolve) => {
-    const overlay = document.createElement("div");
-    overlay.className = "modal-overlay";
-    overlay.innerHTML = `
-      <div class="modal-container">
-        <h3>Acesso ao chat</h3>
-        <p>Insira abaixo um código de 8 digitos, Fornecido pelo administrador, Para obter o acesso ao Taboi-chat</p>
-        <input type="text" class="modal-input" id="login-code" placeholder="Insira o código de 8 digitos" autocomplete="off">
-        <div class="modal-buttons">
-          <button class="modal-btn primary" id="login-submit">Entrar</button>
-        </div>
-        <p style="font-size: 12px; margin-top: 16px; color:#aaa;">OBS: Caso não tenha ou perdeu o código de login fale com o administrador para recuperalo/crialo.</p>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-    const input = overlay.querySelector("#login-code");
-    const submitBtn = overlay.querySelector("#login-submit");
-    const handleLogin = () => {
-      const code = input.value.trim();
-      let foundUser = null;
-      for (const [nome, codigo] of Object.entries(ACCOUNTS_DB)) {
-        if (codigo === code) {
-          foundUser = { nome, codigo };
-          break;
-        }
-      }
-      if (foundUser) {
-        localStorage.setItem("taboi_session", JSON.stringify(foundUser));
-        overlay.remove();
-        resolve(foundUser);
-      } else {
-        const errToast = document.createElement("div");
-        errToast.textContent = "❌ Código inválido! Tente novamente.";
-        errToast.style.cssText = "position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#e5484d; padding:8px 20px; border-radius:40px; z-index:2000; color:white;";
-        document.body.appendChild(errToast);
-        setTimeout(() => errToast.remove(), 2000);
-        input.value = "";
-        input.focus();
-      }
-    };
-    submitBtn.onclick = handleLogin;
-    input.addEventListener("keypress", (e) => { if (e.key === "Enter") handleLogin(); });
-    input.focus();
-  });
+text.addEventListener("keydown",(e)=>{
+ if(e.key==="Enter" && !e.shiftKey){
+  e.preventDefault();
+  send();
+ }
+});
+
+/* ===== LINK CLICKAVEL ===== */
+function linkify(t){
+ return t.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
 }
 
-// ========== ENVIO DE MENSAGEM + ARQUIVOS ==========
-async function sendMessageWithFile(file, caption = "") {
-  if (!currentUser) return;
-  let mediaUrl = null;
-  let mediaType = null;
-  let fileName = null;
-  if (file) {
-    const storageRef = ref(storage, `chat_media/${Date.now()}_${file.name}`);
-    try {
-      const snapshot = await uploadBytes(storageRef, file);
-      mediaUrl = await getDownloadURL(snapshot.ref);
-      if (file.type.startsWith("image/")) mediaType = "image";
-      else if (file.type.startsWith("video/")) mediaType = "video";
-      else if (file.type.includes("gif")) mediaType = "image";
-      else mediaType = "document";
-      fileName = file.name;
-    } catch (err) {
-      console.error("Upload error", err);
-      showInAppToast("Erro", "Falha no envio do arquivo");
-      return;
+/* ===== LISTENER MENSAGENS ===== */
+const q = query(MESSAGES, orderBy("ts","asc"), limit(200));
+
+onSnapshot(q, (snap) => {
+ const newMessages = [];
+ 
+ snap.docChanges().forEach(change => {
+  if (change.type === "added") {
+   const msgData = change.doc.data();
+   const msgId = change.doc.id;
+   
+   if (!lastProcessedMessages.has(msgId)) {
+    lastProcessedMessages.add(msgId);
+    newMessages.push({ id: msgId, data: msgData });
+    
+    if (lastProcessedMessages.size > 300) {
+     const toDelete = [...lastProcessedMessages][0];
+     lastProcessedMessages.delete(toDelete);
     }
+   }
   }
-  const finalText = caption || (file ? "📎 Arquivo anexado" : "");
-  await addDoc(MESSAGES_COL, {
-    user: currentUser.nome,
-    body: finalText,
-    ts: serverTimestamp(),
-    mediaUrl: mediaUrl || null,
-    mediaType: mediaType,
-    fileName: fileName || null,
-  });
-}
-
-async function sendTextMessage(textOnly) {
-  if (!textOnly.trim()) return;
-  await addDoc(MESSAGES_COL, {
-    user: currentUser.nome,
-    body: textOnly,
-    ts: serverTimestamp(),
-    mediaUrl: null,
-  });
-}
-
-// ========== RENDER MENSAGEM ==========
-function createMessageElement(data, docId) {
-  const isMine = data.user === currentUser?.nome;
-  const wrap = document.createElement("div");
-  wrap.className = `msg ${isMine ? "me" : ""}`;
-  const avatar = document.createElement("div");
-  avatar.className = "avatar";
-  avatar.textContent = data.user?.[0]?.toUpperCase() || "?";
-  const bubbleDiv = document.createElement("div");
-  bubbleDiv.className = "bubble";
-  let contentHTML = `<div>${linkify(escapeHtml(data.body || ""))}</div>`;
-  if (data.mediaUrl) {
-    if (data.mediaType === "image") {
-      contentHTML += `<div class="media-preview"><img src="${data.mediaUrl}" alt="imagem" loading="lazy"></div>`;
-    } else if (data.mediaType === "video") {
-      contentHTML += `<div class="media-preview"><video src="${data.mediaUrl}" controls preload="metadata"></video></div>`;
-    } else if (data.mediaType === "document") {
-      contentHTML += `<div class="file-doc">📄 <a href="${data.mediaUrl}" target="_blank">${escapeHtml(data.fileName || "documento")}</a></div>`;
-    } else {
-      contentHTML += `<div class="file-doc">🔗 <a href="${data.mediaUrl}" target="_blank">${escapeHtml(data.fileName || "abrir mídia")}</a></div>`;
-    }
+ });
+ 
+ feed.innerHTML = "";
+ snap.forEach(doc => {
+  const m = doc.data();
+  if(m.user && m.body) {
+   feed.appendChild(messageEl(m));
   }
-  bubbleDiv.innerHTML = contentHTML;
-  const metaDiv = document.createElement("div");
-  metaDiv.className = "meta";
-  metaDiv.innerHTML = `<span>${escapeHtml(data.user)}</span><span class="timestamp">${formatTimestamp(data.ts)}</span>`;
-  const rightCol = document.createElement("div");
-  rightCol.appendChild(bubbleDiv);
-  rightCol.appendChild(metaDiv);
-  wrap.appendChild(avatar);
-  wrap.appendChild(rightCol);
-  return wrap;
-}
-
-// ========== ESCUTAR MENSAGENS + NOTIFICAÇÕES ==========
-let snapshotUnsub = null;
-
-function startMessagesListener() {
-  if (snapshotUnsub) snapshotUnsub();
-  const qMessages = query(MESSAGES_COL, orderBy("ts", "asc"), limit(300));
-  snapshotUnsub = onSnapshot(qMessages, (snap) => {
-    if (!currentUser) return;
-    const feedContainer = feedElement;
-    const newAdded = [];
-    snap.docChanges().forEach((change) => {
-      if (change.type === "added") {
-        const msgId = change.doc.id;
-        const msg = change.doc.data();
-        if (!lastMsgIds.has(msgId)) {
-          lastMsgIds.add(msgId);
-          newAdded.push({ id: msgId, data: msg });
-          if (lastMsgIds.size > 500) {
-            const toRemove = [...lastMsgIds][0];
-            lastMsgIds.delete(toRemove);
-          }
-        }
-      }
-    });
-    // rerender feed
-    feedContainer.innerHTML = "";
-    snap.forEach(doc => {
-      const msgData = doc.data();
-      feedContainer.appendChild(createMessageElement(msgData, doc.id));
-    });
-    feedContainer.scrollTop = feedContainer.scrollHeight;
-    // notificações para mensagens novas (de outros)
-    newAdded.forEach(({ data }) => {
-      if (data.user !== currentUser?.nome) {
-        const preview = data.body ? data.body : (data.mediaType ? "📎 arquivo" : "mensagem");
-        if (!document.hasFocus()) {
-          showNativeNotification(data.user, preview, "message");
-        } else {
-          showInAppToast(data.user, preview);
-        }
-      }
-    });
-  });
-}
-
-// ========== UPLOAD DE ARQUIVOS (imagem, gif, video, doc) ==========
-function setupFileButton() {
-  const fileBtn = document.getElementById("fileBtn");
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = "image/*, video/*, application/pdf, .gif, .txt, .doc, .docx, .xls, .zip";
-  fileInput.multiple = false;
-  fileBtn.addEventListener("click", () => fileInput.click());
-  fileInput.addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const caption = textarea.value.trim();
-    textarea.value = "";
-    await sendMessageWithFile(file, caption);
-    textarea.focus();
-    fileInput.value = "";
-  });
-}
-
-// ========== INICIALIZAR APP APÓS LOGIN ==========
-async function boot() {
-  // checar sessão
-  const saved = localStorage.getItem("taboi_session");
-  let userSession = null;
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      if (parsed.nome && ACCOUNTS_DB[parsed.nome] === parsed.codigo) userSession = parsed;
-    } catch(e) {}
+ });
+ feed.scrollTop = feed.scrollHeight;
+ 
+ newMessages.forEach(({ data: m }) => {
+  if (m.user && m.user !== currentUser) {
+   const timestampFormatted = formatTimestamp(m.ts);
+   showNotification(m.user, m.body, timestampFormatted);
   }
-  if (!userSession) {
-    userSession = await showLoginModal();
-    if (!userSession) {
-      alert("Código inválido, recarregue a página");
-      return;
-    }
+ });
+});
+
+function messageEl(m){
+ const mine = m.user === currentUser;
+ const userAvatar = m.user ? m.user[0].toUpperCase() : "?";
+
+ const wrap = document.createElement("div");
+ wrap.className = "msg" + (mine ? " me" : "");
+
+ const av = document.createElement("div");
+ av.className = "avatar";
+ av.textContent = userAvatar;
+
+ const right = document.createElement("div");
+
+ const bubble = document.createElement("div");
+ bubble.className = "bubble";
+ bubble.innerHTML = linkify(escapeHtml(m.body));
+
+ const meta = document.createElement("div");
+ meta.className = "meta";
+ 
+ const userNameSpan = document.createElement("span");
+ userNameSpan.textContent = m.user || "Anônimo";
+ 
+ const timeSpan = document.createElement("span");
+ timeSpan.className = "timestamp";
+ timeSpan.textContent = formatTimestamp(m.ts);
+ 
+ meta.appendChild(userNameSpan);
+ meta.appendChild(timeSpan);
+
+ right.appendChild(bubble);
+ right.appendChild(meta);
+
+ wrap.appendChild(av);
+ wrap.appendChild(right);
+
+ return wrap;
+}
+
+/* ===== FECHAR EMOJI PANEL ===== */
+document.addEventListener("click", (e) => {
+ const emojiPanel = document.getElementById("emojiPanel");
+ const emojiBtn = document.getElementById("emojiBtn");
+ if(emojiPanel && emojiBtn) {
+  const isClickInside = emojiPanel.contains(e.target) || emojiBtn.contains(e.target);
+  if (!isClickInside && emojiPanel.style.display === "flex") {
+   emojiPanel.style.display = "none";
   }
-  currentUser = userSession;
-  // pergunta permissão notificação com modal central
-  if (Notification.permission === "default") {
-    await showNotificationPermissionModal();
-  } else if (Notification.permission === "granted") {
-    notificationPerm = true;
+ }
+});
+
+/* ===== VISIBILITY CHANGE ===== */
+document.addEventListener("visibilitychange", () => {
+ if (!document.hidden) {
+  unreadCount = 0;
+  document.title = originalTitle;
+ } else {
+  originalTitle = document.title;
+ }
+});
+
+/* ===== INICIALIZAÇÃO ===== */
+async function init() {
+ await loadAccounts();
+ 
+ const savedCode = localStorage.getItem('taboi_code');
+ if (savedCode) {
+  const user = accountsData.users.find(u => u.code === savedCode);
+  if (user) {
+   currentUser = user.name;
+   showApp();
+   requestNotificationPermission();
   } else {
-    notificationPerm = false;
+   localStorage.removeItem('taboi_code');
+   localStorage.removeItem('taboi_user');
+   showLoginModal();
   }
-  // constrói interface DOM
-  const appContainer = document.getElementById("app");
-  appContainer.innerHTML = `
-    <div class="top">
-      <div class="logo"><img src="files/icon/Tfavicon.png" alt="logo" onerror="this.src='https://placehold.co/32x32?text=T'"></div>
-      <h1>taboi · ${escapeHtml(currentUser.nome)}</h1>
-    </div>
-    <div class="feed" id="feedContainer"></div>
-    <div class="input-area">
-      <div class="file-actions">
-        <button class="tool-btn" id="emojiPickBtn">😀</button>
-        <button class="tool-btn" id="fileBtn">📎</button>
-        <button class="tool-btn" id="linkBtn">🔗</button>
-      </div>
-      <textarea class="text-input" id="msgInput" placeholder="Mensagem ou legenda do arquivo..." rows="1"></textarea>
-      <button class="send-btn" id="sendMsgBtn">Enviar</button>
-      <div class="emoji-panel" id="emojiPanelGlobal">
-        <div id="emojiGridContainer" class="emoji-grid"></div>
-      </div>
-    </div>
-  `;
-  feedElement = document.getElementById("feedContainer");
-  textarea = document.getElementById("msgInput");
-  sendBtn = document.getElementById("sendMsgBtn");
-  emojiPanel = document.getElementById("emojiPanelGlobal");
-  emojiBtn = document.getElementById("emojiPickBtn");
-  const linkTool = document.getElementById("linkBtn");
-
-  // emojis
-  const emojiList = ["😀","😂","😎","😍","🥶","😡","🔥","✨","👍","❤️","🎉","💻","🐱","🚀","🌍","⭐","🎁","⚡","💬","📷","🎥","🔗","💡"];
-  const grid = document.getElementById("emojiGridContainer");
-  grid.innerHTML = "";
-  emojiList.forEach(em => {
-    const span = document.createElement("span");
-    span.textContent = em;
-    span.style.cursor = "pointer";
-    span.style.fontSize = "26px";
-    span.onclick = () => {
-      textarea.value += em;
-      textarea.focus();
-    };
-    grid.appendChild(span);
-  });
-
-  emojiBtn.onclick = () => {
-    emojiPanel.style.display = emojiPanel.style.display === "flex" ? "none" : "flex";
-  };
-  linkTool.onclick = () => {
-    const url = prompt("Cole o link (URL):");
-    if (url) textarea.value += ` ${url} `;
-    textarea.focus();
-  };
-  // envia texto
-  const sendTextOnly = async () => {
-    const raw = textarea.value.trim();
-    if (!raw) return;
-    textarea.value = "";
-    await sendTextMessage(raw);
-    textarea.focus();
-  };
-  sendBtn.onclick = sendTextOnly;
-  textarea.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendTextOnly();
-    }
-  });
-  setupFileButton();
-  startMessagesListener();
-  // fecha emoji ao clicar fora
-  document.addEventListener("click", (e) => {
-    if (emojiPanel && !emojiPanel.contains(e.target) && e.target !== emojiBtn) {
-      emojiPanel.style.display = "none";
-    }
-  });
-  appContainer.classList.add("visible");
+ } else {
+  showLoginModal();
+ }
 }
 
-boot().catch(e => console.error("boot error", e));
+init();
 </script>
+
 </body>
 </html>
