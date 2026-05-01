@@ -1,0 +1,34 @@
+{
+  "users": [
+    {
+      "code": "55946071",
+      "name": "Vicente",
+      "avatar": "V"
+    },
+    {
+      "code": "LUC456",
+      "name": "Lucca",
+      "avatar": "L"
+    },
+    {
+      "code": "FRA789",
+      "name": "Francisco",
+      "avatar": "F"
+    },
+    {
+      "code": "MAR012",
+      "name": "Mariana",
+      "avatar": "M"
+    },
+    {
+      "code": "ADMIN001",
+      "name": "Administrador",
+      "avatar": "A"
+    },
+    {
+      "code": "GUEST999",
+      "name": "Convidado",
+      "avatar": "G"
+    }
+  ]
+}
