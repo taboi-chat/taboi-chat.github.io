@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>taboi · chat v3</title>
+<title>Taboi · chat v3</title>
 <link rel="icon" href="files/icon/favicon.ico">
 
 <style>
@@ -528,13 +528,13 @@ function showLoginModal() {
     overlay.className = "modal-overlay";
     overlay.innerHTML = `
       <div class="modal-container">
-        <h3>🔐 Acesso ao chat</h3>
-        <p>Digite seu código de login fornecido pelo administrador</p>
-        <input type="text" class="modal-input" id="login-code" placeholder="ex: VIC2025 ou ADMIN123" autocomplete="off">
+        <h3>Acesso ao chat</h3>
+        <p>Insira abaixo um código de 8 digitos, Fornecido pelo administrador, Para obter o acesso ao Taboi-chat</p>
+        <input type="text" class="modal-input" id="login-code" placeholder="Insira o código de 8 digitos" autocomplete="off">
         <div class="modal-buttons">
           <button class="modal-btn primary" id="login-submit">Entrar</button>
         </div>
-        <p style="font-size: 12px; margin-top: 16px; color:#aaa;">Contas: Vicente, Lucca, Francisco, Mariana, Administrador</p>
+        <p style="font-size: 12px; margin-top: 16px; color:#aaa;">OBS: Caso não tenha ou perdeu o código de login fale com o administrador para recuperalo/crialo.</p>
       </div>
     `;
     document.body.appendChild(overlay);
