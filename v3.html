@@ -1,1 +1,821 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>taboi · chat v3</title>
+<link rel="icon" href="files/icon/favicon.ico">
 
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --orange: #ff7a00;
+  --orange-2: #ff8f26;
+  --card: #17181b;
+  --text: #eaeaea;
+  --muted: #a8a8a8;
+  --mine: #23252a;
+  --danger: #e5484d;
+}
+
+body {
+  background: #0b0b0b;
+  font-family: system-ui, 'Segoe UI', sans-serif;
+  color: var(--text);
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  margin: 0;
+}
+
+/* === MODAL GLOBAL (reutilizável) === */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-container {
+  background: #1e1f24;
+  border-radius: 28px;
+  max-width: 400px;
+  width: 90%;
+  padding: 24px 20px 28px;
+  box-shadow: 0 25px 40px rgba(0,0,0,0.5);
+  text-align: center;
+  border: 1px solid rgba(255,125,0,0.3);
+}
+
+.modal-container h3 {
+  font-size: 1.6rem;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--orange), var(--orange-2));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.modal-container p {
+  color: var(--muted);
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: #0f0f12;
+  border: 1px solid #2f3138;
+  border-radius: 60px;
+  color: white;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.modal-input:focus {
+  border-color: var(--orange);
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.modal-btn {
+  padding: 10px 20px;
+  border-radius: 60px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 0.9rem;
+}
+
+.modal-btn.primary {
+  background: linear-gradient(90deg, var(--orange), var(--orange-2));
+  color: #111;
+}
+
+.modal-btn.secondary {
+  background: #2c2e36;
+  color: #ddd;
+}
+
+.modal-btn.primary:hover {
+  opacity: 0.9;
+  transform: scale(0.97);
+}
+
+/* === APP LAYOUT === */
+.app {
+  width: min(1000px, 96%);
+  height: min(820px, 94vh);
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 20px 35px rgba(0,0,0,0.6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.app.visible {
+  opacity: 1;
+}
+
+/* header */
+.top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  background: linear-gradient(90deg, var(--orange), var(--orange-2));
+  color: #111;
+  font-weight: bold;
+}
+
+.logo img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.top h1 {
+  font-size: 1.3rem;
+  letter-spacing: -0.3px;
+}
+
+/* feed messages */
+.feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 14px;
+  background: #111216;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.msg {
+  display: flex;
+  gap: 10px;
+  max-width: 80%;
+  align-items: flex-start;
+}
+
+.msg.me {
+  margin-left: auto;
+  flex-direction: row-reverse;
+}
+
+.avatar {
+  min-width: 36px;
+  height: 36px;
+  background: #2b2e36;
+  border-radius: 40px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--orange-2);
+}
+
+.bubble {
+  background: var(--mine);
+  padding: 10px 14px;
+  border-radius: 20px;
+  line-height: 1.4;
+  word-break: break-word;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.bubble a {
+  color: #ffae5d;
+  text-decoration: underline;
+}
+
+.media-preview {
+  margin-top: 6px;
+  max-width: 240px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0a0a0c;
+}
+
+.media-preview img, 
+.media-preview video {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 12px;
+  display: block;
+}
+
+.file-doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #2c2f38;
+  padding: 6px 12px;
+  border-radius: 30px;
+  font-size: 0.8rem;
+}
+
+.meta {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 5px;
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+
+/* input area */
+.input-area {
+  background: #101114;
+  padding: 12px 14px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-top: 1px solid #25282e;
+  position: relative;
+  flex-wrap: wrap;
+}
+
+.file-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.tool-btn {
+  background: #1f2128;
+  border: none;
+  border-radius: 30px;
+  width: 42px;
+  height: 42px;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: #ffaa55;
+  transition: 0.1s;
+}
+
+.tool-btn:hover {
+  background: #2c2f38;
+}
+
+.text-input {
+  flex: 1;
+  background: #1a1c22;
+  border: 1px solid #2a2d34;
+  border-radius: 28px;
+  padding: 10px 16px;
+  color: white;
+  font-family: inherit;
+  resize: none;
+  font-size: 0.95rem;
+  outline: none;
+  max-height: 80px;
+}
+
+.send-btn {
+  background: linear-gradient(90deg, var(--orange), var(--orange-2));
+  border: none;
+  border-radius: 32px;
+  padding: 0 20px;
+  font-weight: bold;
+  height: 42px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #111;
+}
+
+/* emoji panel */
+.emoji-panel {
+  position: absolute;
+  bottom: 70px;
+  left: 12px;
+  background: #1e2027;
+  border-radius: 20px;
+  padding: 12px;
+  width: 280px;
+  max-height: 280px;
+  overflow-y: auto;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 200;
+  box-shadow: 0 10px 25px black;
+}
+
+.emoji-category {
+  font-size: 11px;
+  color: #aaa;
+  margin: 6px 0 4px;
+}
+
+.emoji-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.emoji-grid span {
+  cursor: pointer;
+  font-size: 22px;
+  transition: 0.05s linear;
+}
+
+.emoji-grid span:hover {
+  transform: scale(1.2);
+}
+
+/* notificação customizada (flutuante) */
+.notif-toast {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  background: #1f2129ee;
+  backdrop-filter: blur(12px);
+  border-left: 5px solid var(--orange);
+  border-radius: 16px;
+  padding: 12px 18px;
+  min-width: 240px;
+  max-width: 320px;
+  z-index: 1100;
+  animation: slideRight 0.25s ease;
+  box-shadow: 0 12px 20px rgba(0,0,0,0.4);
+  cursor: pointer;
+  color: white;
+}
+
+.notif-title {
+  font-weight: bold;
+  font-size: 0.85rem;
+  color: var(--orange-2);
+}
+
+.notif-msg {
+  font-size: 0.8rem;
+  margin-top: 4px;
+  word-break: break-word;
+}
+
+@keyframes slideRight {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* scroll */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #101114;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--orange);
+  border-radius: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, limit } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-storage.js";
+
+// ========== FIREBASE CONFIG ==========
+const firebaseConfig = {
+  apiKey: "AIzaSyD6qPIIX4i8n0e7mm31y2D2Pb1B26NogGM",
+  authDomain: "taboi-v2.firebaseapp.com",
+  projectId: "taboi-v2",
+  storageBucket: "taboi-v2.firebasestorage.app",
+  messagingSenderId: "774936620311",
+  appId: "1:774936620311:web:f6440002476c7cd9c2db52"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+const storage = getStorage(fbApp);
+const MESSAGES_COL = collection(db, "taboi_messages");
+
+// ========== GLOBAL STATE ==========
+let currentUser = null;      // { nome, codigo }
+let notificationPerm = false;
+let lastMsgIds = new Set();
+let feedElement, textarea, sendBtn, emojiPanel, emojiBtn;
+
+// ========== ACCOUNTS JSON (embedded accounts) ==========
+const ACCOUNTS_DB = {
+  "Vicente": "VIC2025",
+  "Lucca": "LUC88",
+  "Francisco": "CHICO99",
+  "Mariana": "MARI22",
+  "Administrador": "ADMIN123"
+};
+
+// ========== FUNÇÕES AUX ==========
+function escapeHtml(str) {
+  if (!str) return "";
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function formatTimestamp(ts) {
+  if (!ts) return "agora";
+  let date;
+  if (ts?.toDate) date = ts.toDate();
+  else if (ts?.seconds) date = new Date(ts.seconds * 1000);
+  else date = new Date(ts);
+  const now = new Date();
+  const diff = now - date;
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "agora";
+  if (minutes < 60) return `${minutes} min`;
+  if (diff < 86400000) return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
+
+function linkify(text) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+}
+
+function showNativeNotification(senderName, content, type = "message") {
+  if (!notificationPerm && Notification.permission !== "granted") return;
+  if (document.hasFocus() && type === "message") return; // se página visível usa toast personalizado
+  if (!document.hasFocus() && Notification.permission === "granted") {
+    const notif = new Notification(`📩 ${senderName}`, {
+      body: content.length > 70 ? content.substr(0, 70) + "..." : content,
+      icon: "files/icon/Tfavicon.png",
+      silent: false
+    });
+    notif.onclick = () => window.focus();
+  }
+}
+
+function showInAppToast(sender, text) {
+  const existing = document.querySelector(".notif-toast");
+  if (existing) existing.remove();
+  const toast = document.createElement("div");
+  toast.className = "notif-toast";
+  toast.innerHTML = `<div class="notif-title">💬 ${escapeHtml(sender)}</div><div class="notif-msg">${escapeHtml(text.length > 50 ? text.slice(0,50)+"..." : text)}</div>`;
+  toast.onclick = () => { toast.remove(); document.querySelector(".feed")?.scrollTo({ top: 999999, behavior: "smooth" }); };
+  document.body.appendChild(toast);
+  setTimeout(() => toast?.remove(), 4800);
+}
+
+// ========== MODAL CENTRAL (permissão de notificação) ==========
+function showNotificationPermissionModal() {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.innerHTML = `
+      <div class="modal-container">
+        <h3>🔔 Ativar notificações</h3>
+        <p>Receba alertas quando alguém enviar mensagens, mesmo com o chat fechado.</p>
+        <div class="modal-buttons">
+          <button class="modal-btn primary" id="modal-allow">✅ Sim, ativar</button>
+          <button class="modal-btn secondary" id="modal-deny">❌ Não, obrigado</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const allowBtn = overlay.querySelector("#modal-allow");
+    const denyBtn = overlay.querySelector("#modal-deny");
+    allowBtn.onclick = async () => {
+      const result = await Notification.requestPermission();
+      notificationPerm = result === "granted";
+      overlay.remove();
+      resolve(notificationPerm);
+      if (notificationPerm) showInAppToast("Sistema", "Notificações ativadas! ✅");
+    };
+    denyBtn.onclick = () => {
+      notificationPerm = false;
+      overlay.remove();
+      resolve(false);
+    };
+  });
+}
+
+// ========== MODAL LOGIN (código de acesso) ==========
+function showLoginModal() {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.innerHTML = `
+      <div class="modal-container">
+        <h3>🔐 Acesso ao chat</h3>
+        <p>Digite seu código de login fornecido pelo administrador</p>
+        <input type="text" class="modal-input" id="login-code" placeholder="ex: VIC2025 ou ADMIN123" autocomplete="off">
+        <div class="modal-buttons">
+          <button class="modal-btn primary" id="login-submit">Entrar</button>
+        </div>
+        <p style="font-size: 12px; margin-top: 16px; color:#aaa;">Contas: Vicente, Lucca, Francisco, Mariana, Administrador</p>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector("#login-code");
+    const submitBtn = overlay.querySelector("#login-submit");
+    const handleLogin = () => {
+      const code = input.value.trim();
+      let foundUser = null;
+      for (const [nome, codigo] of Object.entries(ACCOUNTS_DB)) {
+        if (codigo === code) {
+          foundUser = { nome, codigo };
+          break;
+        }
+      }
+      if (foundUser) {
+        localStorage.setItem("taboi_session", JSON.stringify(foundUser));
+        overlay.remove();
+        resolve(foundUser);
+      } else {
+        const errToast = document.createElement("div");
+        errToast.textContent = "❌ Código inválido! Tente novamente.";
+        errToast.style.cssText = "position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#e5484d; padding:8px 20px; border-radius:40px; z-index:2000; color:white;";
+        document.body.appendChild(errToast);
+        setTimeout(() => errToast.remove(), 2000);
+        input.value = "";
+        input.focus();
+      }
+    };
+    submitBtn.onclick = handleLogin;
+    input.addEventListener("keypress", (e) => { if (e.key === "Enter") handleLogin(); });
+    input.focus();
+  });
+}
+
+// ========== ENVIO DE MENSAGEM + ARQUIVOS ==========
+async function sendMessageWithFile(file, caption = "") {
+  if (!currentUser) return;
+  let mediaUrl = null;
+  let mediaType = null;
+  let fileName = null;
+  if (file) {
+    const storageRef = ref(storage, `chat_media/${Date.now()}_${file.name}`);
+    try {
+      const snapshot = await uploadBytes(storageRef, file);
+      mediaUrl = await getDownloadURL(snapshot.ref);
+      if (file.type.startsWith("image/")) mediaType = "image";
+      else if (file.type.startsWith("video/")) mediaType = "video";
+      else if (file.type.includes("gif")) mediaType = "image";
+      else mediaType = "document";
+      fileName = file.name;
+    } catch (err) {
+      console.error("Upload error", err);
+      showInAppToast("Erro", "Falha no envio do arquivo");
+      return;
+    }
+  }
+  const finalText = caption || (file ? "📎 Arquivo anexado" : "");
+  await addDoc(MESSAGES_COL, {
+    user: currentUser.nome,
+    body: finalText,
+    ts: serverTimestamp(),
+    mediaUrl: mediaUrl || null,
+    mediaType: mediaType,
+    fileName: fileName || null,
+  });
+}
+
+async function sendTextMessage(textOnly) {
+  if (!textOnly.trim()) return;
+  await addDoc(MESSAGES_COL, {
+    user: currentUser.nome,
+    body: textOnly,
+    ts: serverTimestamp(),
+    mediaUrl: null,
+  });
+}
+
+// ========== RENDER MENSAGEM ==========
+function createMessageElement(data, docId) {
+  const isMine = data.user === currentUser?.nome;
+  const wrap = document.createElement("div");
+  wrap.className = `msg ${isMine ? "me" : ""}`;
+  const avatar = document.createElement("div");
+  avatar.className = "avatar";
+  avatar.textContent = data.user?.[0]?.toUpperCase() || "?";
+  const bubbleDiv = document.createElement("div");
+  bubbleDiv.className = "bubble";
+  let contentHTML = `<div>${linkify(escapeHtml(data.body || ""))}</div>`;
+  if (data.mediaUrl) {
+    if (data.mediaType === "image") {
+      contentHTML += `<div class="media-preview"><img src="${data.mediaUrl}" alt="imagem" loading="lazy"></div>`;
+    } else if (data.mediaType === "video") {
+      contentHTML += `<div class="media-preview"><video src="${data.mediaUrl}" controls preload="metadata"></video></div>`;
+    } else if (data.mediaType === "document") {
+      contentHTML += `<div class="file-doc">📄 <a href="${data.mediaUrl}" target="_blank">${escapeHtml(data.fileName || "documento")}</a></div>`;
+    } else {
+      contentHTML += `<div class="file-doc">🔗 <a href="${data.mediaUrl}" target="_blank">${escapeHtml(data.fileName || "abrir mídia")}</a></div>`;
+    }
+  }
+  bubbleDiv.innerHTML = contentHTML;
+  const metaDiv = document.createElement("div");
+  metaDiv.className = "meta";
+  metaDiv.innerHTML = `<span>${escapeHtml(data.user)}</span><span class="timestamp">${formatTimestamp(data.ts)}</span>`;
+  const rightCol = document.createElement("div");
+  rightCol.appendChild(bubbleDiv);
+  rightCol.appendChild(metaDiv);
+  wrap.appendChild(avatar);
+  wrap.appendChild(rightCol);
+  return wrap;
+}
+
+// ========== ESCUTAR MENSAGENS + NOTIFICAÇÕES ==========
+let snapshotUnsub = null;
+
+function startMessagesListener() {
+  if (snapshotUnsub) snapshotUnsub();
+  const qMessages = query(MESSAGES_COL, orderBy("ts", "asc"), limit(300));
+  snapshotUnsub = onSnapshot(qMessages, (snap) => {
+    if (!currentUser) return;
+    const feedContainer = feedElement;
+    const newAdded = [];
+    snap.docChanges().forEach((change) => {
+      if (change.type === "added") {
+        const msgId = change.doc.id;
+        const msg = change.doc.data();
+        if (!lastMsgIds.has(msgId)) {
+          lastMsgIds.add(msgId);
+          newAdded.push({ id: msgId, data: msg });
+          if (lastMsgIds.size > 500) {
+            const toRemove = [...lastMsgIds][0];
+            lastMsgIds.delete(toRemove);
+          }
+        }
+      }
+    });
+    // rerender feed
+    feedContainer.innerHTML = "";
+    snap.forEach(doc => {
+      const msgData = doc.data();
+      feedContainer.appendChild(createMessageElement(msgData, doc.id));
+    });
+    feedContainer.scrollTop = feedContainer.scrollHeight;
+    // notificações para mensagens novas (de outros)
+    newAdded.forEach(({ data }) => {
+      if (data.user !== currentUser?.nome) {
+        const preview = data.body ? data.body : (data.mediaType ? "📎 arquivo" : "mensagem");
+        if (!document.hasFocus()) {
+          showNativeNotification(data.user, preview, "message");
+        } else {
+          showInAppToast(data.user, preview);
+        }
+      }
+    });
+  });
+}
+
+// ========== UPLOAD DE ARQUIVOS (imagem, gif, video, doc) ==========
+function setupFileButton() {
+  const fileBtn = document.getElementById("fileBtn");
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = "image/*, video/*, application/pdf, .gif, .txt, .doc, .docx, .xls, .zip";
+  fileInput.multiple = false;
+  fileBtn.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const caption = textarea.value.trim();
+    textarea.value = "";
+    await sendMessageWithFile(file, caption);
+    textarea.focus();
+    fileInput.value = "";
+  });
+}
+
+// ========== INICIALIZAR APP APÓS LOGIN ==========
+async function boot() {
+  // checar sessão
+  const saved = localStorage.getItem("taboi_session");
+  let userSession = null;
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed.nome && ACCOUNTS_DB[parsed.nome] === parsed.codigo) userSession = parsed;
+    } catch(e) {}
+  }
+  if (!userSession) {
+    userSession = await showLoginModal();
+    if (!userSession) {
+      alert("Código inválido, recarregue a página");
+      return;
+    }
+  }
+  currentUser = userSession;
+  // pergunta permissão notificação com modal central
+  if (Notification.permission === "default") {
+    await showNotificationPermissionModal();
+  } else if (Notification.permission === "granted") {
+    notificationPerm = true;
+  } else {
+    notificationPerm = false;
+  }
+  // constrói interface DOM
+  const appContainer = document.getElementById("app");
+  appContainer.innerHTML = `
+    <div class="top">
+      <div class="logo"><img src="files/icon/Tfavicon.png" alt="logo" onerror="this.src='https://placehold.co/32x32?text=T'"></div>
+      <h1>taboi · ${escapeHtml(currentUser.nome)}</h1>
+    </div>
+    <div class="feed" id="feedContainer"></div>
+    <div class="input-area">
+      <div class="file-actions">
+        <button class="tool-btn" id="emojiPickBtn">😀</button>
+        <button class="tool-btn" id="fileBtn">📎</button>
+        <button class="tool-btn" id="linkBtn">🔗</button>
+      </div>
+      <textarea class="text-input" id="msgInput" placeholder="Mensagem ou legenda do arquivo..." rows="1"></textarea>
+      <button class="send-btn" id="sendMsgBtn">Enviar</button>
+      <div class="emoji-panel" id="emojiPanelGlobal">
+        <div id="emojiGridContainer" class="emoji-grid"></div>
+      </div>
+    </div>
+  `;
+  feedElement = document.getElementById("feedContainer");
+  textarea = document.getElementById("msgInput");
+  sendBtn = document.getElementById("sendMsgBtn");
+  emojiPanel = document.getElementById("emojiPanelGlobal");
+  emojiBtn = document.getElementById("emojiPickBtn");
+  const linkTool = document.getElementById("linkBtn");
+
+  // emojis
+  const emojiList = ["😀","😂","😎","😍","🥶","😡","🔥","✨","👍","❤️","🎉","💻","🐱","🚀","🌍","⭐","🎁","⚡","💬","📷","🎥","🔗","💡"];
+  const grid = document.getElementById("emojiGridContainer");
+  grid.innerHTML = "";
+  emojiList.forEach(em => {
+    const span = document.createElement("span");
+    span.textContent = em;
+    span.style.cursor = "pointer";
+    span.style.fontSize = "26px";
+    span.onclick = () => {
+      textarea.value += em;
+      textarea.focus();
+    };
+    grid.appendChild(span);
+  });
+
+  emojiBtn.onclick = () => {
+    emojiPanel.style.display = emojiPanel.style.display === "flex" ? "none" : "flex";
+  };
+  linkTool.onclick = () => {
+    const url = prompt("Cole o link (URL):");
+    if (url) textarea.value += ` ${url} `;
+    textarea.focus();
+  };
+  // envia texto
+  const sendTextOnly = async () => {
+    const raw = textarea.value.trim();
+    if (!raw) return;
+    textarea.value = "";
+    await sendTextMessage(raw);
+    textarea.focus();
+  };
+  sendBtn.onclick = sendTextOnly;
+  textarea.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendTextOnly();
+    }
+  });
+  setupFileButton();
+  startMessagesListener();
+  // fecha emoji ao clicar fora
+  document.addEventListener("click", (e) => {
+    if (emojiPanel && !emojiPanel.contains(e.target) && e.target !== emojiBtn) {
+      emojiPanel.style.display = "none";
+    }
+  });
+  appContainer.classList.add("visible");
+}
+
+boot().catch(e => console.error("boot error", e));
+</script>
+</body>
+</html>
