@@ -51,6 +51,45 @@ body{
  background:linear-gradient(90deg,var(--orange),var(--orange-2));
 }
 
+/* ===== BAN SYSTEM ===== */
+.ban-message{
+ text-align:center;
+ padding:20px;
+ background:#2a1a1a;
+ border-radius:12px;
+ border:1px solid #ff4444;
+ max-width:300px;
+ margin-bottom:20px;
+}
+
+.ban-message h3{
+ color:#ff4444;
+ margin:0 0 10px 0;
+}
+
+.ban-message p{
+ margin:10px 0;
+ font-size:14px;
+ color:#ffcccc;
+}
+
+.ban-message button{
+ margin-top:10px;
+ padding:8px 16px;
+ background:#ff4444;
+ border:none;
+ border-radius:6px;
+ color:white;
+ cursor:pointer;
+ font-weight:bold;
+}
+
+.banned-user .bubble{
+ background:#3a1a1a;
+ border-left:3px solid #ff4444;
+ opacity:0.7;
+}
+
 /* ===== APP ===== */
 .app{
  width:min(900px,100%);
@@ -402,22 +441,87 @@ let lastMessageId = null;
 let notificationSound = null;
 let notificationPermission = false;
 
+/* ===== SISTEMA DE BANIMENTO ===== */
+// Lista de usuários banidos (adicione quantos quiser aqui)
+const BANNED_USERS = ['lucca', 'lukka', 'luquinhas', 'luquinha'];
+
+// Função para verificar se um usuário está banido
+function isUserBanned(username) {
+  if (!username) return false;
+  return BANNED_USERS.some(banned => 
+    username.toLowerCase() === banned.toLowerCase()
+  );
+}
+
+// Função para mostrar mensagem de banimento
+function showBanMessage(bannedUser) {
+  const selectDiv = document.getElementById('userSelect');
+  const existingBan = document.querySelector('.ban-message');
+  if (existingBan) existingBan.remove();
+  
+  const banMsg = document.createElement('div');
+  banMsg.className = 'ban-message';
+  banMsg.innerHTML = `
+    <h3>⛔ ACESSO BLOQUEADO ⛔</h3>
+    <p>O usuário <strong>${bannedUser}</strong> foi permanentemente banido deste chat.</p>
+    <p>Motivo: Violação das regras da comunidade.</p>
+    <button onclick="location.reload()">Entender</button>
+  `;
+  selectDiv.insertBefore(banMsg, selectDiv.firstChild);
+}
+
+// Função para aplicar banimento
+function enforceBan() {
+  const currentUser = localStorage.getItem('taboi_user');
+  if (currentUser && isUserBanned(currentUser)) {
+    localStorage.removeItem('taboi_user');
+    showBanMessage(currentUser);
+    document.getElementById('app').classList.remove('visible');
+    document.getElementById('userSelect').style.display = 'flex';
+    return true;
+  }
+  return false;
+}
+
+// Verificação periódica anti-trapaça
+setInterval(() => {
+  const currentUser = localStorage.getItem('taboi_user');
+  if (currentUser && isUserBanned(currentUser)) {
+    localStorage.removeItem('taboi_user');
+    showBanMessage(currentUser);
+    document.getElementById('app').classList.remove('visible');
+    document.getElementById('userSelect').style.display = 'flex';
+  }
+}, 5000);
+
 /* USER */
 function getUser(){
  return localStorage.getItem("taboi_user")||"";
 }
 
+// Função MODIFICADA com verificação de banimento
 window.chooseUser=(u)=>{
+ // VERIFICA BANIMENTO
+ if (isUserBanned(u)) {
+   showBanMessage(u);
+   return;
+ }
+ 
  localStorage.setItem("taboi_user",u);
  document.getElementById("userSelect").style.display="none";
  document.getElementById("app").classList.add("visible");
- // Solicitar permissão de notificação ao escolher usuário
  requestNotificationPermission();
 };
 
 if(getUser()){
- document.getElementById("userSelect").style.display="none";
- document.getElementById("app").classList.add("visible");
+ // Verifica se o usuário atual está banido
+ if (isUserBanned(getUser())) {
+   localStorage.removeItem('taboi_user');
+   document.getElementById("userSelect").style.display="flex";
+ } else {
+   document.getElementById("userSelect").style.display="none";
+   document.getElementById("app").classList.add("visible");
+ }
  requestNotificationPermission();
 }
 
@@ -474,12 +578,9 @@ function showNotification(user, message, timestamp){
  if (!notificationPermission) return;
  
  const currentUser = getUser();
- // Não notifica se a mensagem é do próprio usuário
  if (user === currentUser) return;
  
- // Verifica se o documento está visível
  if (document.hidden) {
-  // Mostra notificação nativa do navegador
   const notification = new Notification(`📩 Nova mensagem de ${user}`, {
    body: message.length > 50 ? message.substring(0, 50) + "..." : message,
    icon: "files/icon/Tfavicon.png",
@@ -491,10 +592,8 @@ function showNotification(user, message, timestamp){
    notification.close();
   };
   
-  // Toca som opcional (se disponível)
   playNotificationSound();
  } else {
-  // Mostra notificação customizada dentro da página
   showCustomNotification(user, message, timestamp);
  }
 }
@@ -510,9 +609,8 @@ function playNotificationSound(){
  }
 }
 
-/* NOTIFICAÇÃO CUSTOMIZADA (quando a página está visível) */
+/* NOTIFICAÇÃO CUSTOMIZADA */
 function showCustomNotification(user, message, timestamp){
- // Remove notificações antigas
  const oldNotifs = document.querySelectorAll(".notification");
  oldNotifs.forEach(notif => {
   notif.style.animation = "slideOut 0.3s ease-out";
@@ -535,13 +633,11 @@ function showCustomNotification(user, message, timestamp){
  notif.onclick = () => {
   notif.style.animation = "slideOut 0.3s ease-out";
   setTimeout(() => notif.remove(), 300);
-  // Rolar para a última mensagem
   feed.scrollTop = feed.scrollHeight;
  };
  
  document.body.appendChild(notif);
  
- // Remove automaticamente após 5 segundos
  setTimeout(() => {
   if(notif.parentNode){
    notif.style.animation = "slideOut 0.3s ease-out";
@@ -600,19 +696,16 @@ function formatTimestamp(timestamp){
  const diffHours = Math.floor(diff / 3600000);
  const diffDays = Math.floor(diff / 86400000);
  
- // Hoje
  if(diffDays === 0){
   if(diffMinutes < 1) return "agora mesmo";
   if(diffMinutes < 60) return `há ${diffMinutes} min`;
   return date.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
  }
  
- // Ontem
  if(diffDays === 1){
   return `ontem às ${date.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})}`;
  }
  
- // Outros dias
  return date.toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit"}) + 
         " às " + date.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
 }
@@ -664,13 +757,19 @@ document.getElementById("linkBtn").onclick = () => {
  if(url) text.value += ` ${url} `;
 };
 
-/* ENVIAR */
-document.getElementById("sendBtn").onclick = send;
-
+/* FUNÇÃO SEND MODIFICADA COM VERIFICAÇÃO DE BANIMENTO */
 async function send(){
  const user = getUser();
- if(!user){
-  showToast("Selecione um usuário primeiro", "error");
+ 
+ // VERIFICA BANIMENTO ANTES DE ENVIAR
+ if(!user || isUserBanned(user)){
+  if(isUserBanned(user)){
+   showToast("❌ Você está banido e não pode enviar mensagens!", "error");
+   localStorage.removeItem('taboi_user');
+   setTimeout(() => location.reload(), 2000);
+  } else {
+   showToast("Selecione um usuário primeiro", "error");
+  }
   return;
  }
 
@@ -705,6 +804,62 @@ function linkify(t){
 /* CACHE PARA CONTROLAR NOTIFICAÇÕES */
 let lastProcessedMessages = new Set();
 
+/* FUNÇÃO MESSAGEEL MODIFICADA PARA MARCAR BANIDOS */
+function messageEl(m){
+ const currentUser = getUser();
+ const isBanned = isUserBanned(m.user);
+ const mine = m.user === currentUser && !isBanned;
+ 
+ const wrap = document.createElement("div");
+ wrap.className = "msg" + (mine ? " me" : "");
+ if(isBanned) wrap.classList.add("banned-user");
+ 
+ const av = document.createElement("div");
+ av.className = "avatar";
+ av.textContent = m.user ? m.user[0] : "?";
+ if(isBanned) av.style.background = "#5a2a2a";
+ 
+ const right = document.createElement("div");
+ 
+ const bubble = document.createElement("div");
+ bubble.className = "bubble";
+ 
+ // Se for usuário banido, mostra indicador
+ if(isBanned){
+  bubble.innerHTML = `
+   <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+    <span style="font-size: 14px;">⛔</span>
+    <span style="color: #ff8888; font-size: 10px;">USUÁRIO BANIDO</span>
+   </div>
+   <div style="opacity: 0.6;">${linkify(escapeHtml(m.body))}</div>
+  `;
+ } else {
+  bubble.innerHTML = linkify(escapeHtml(m.body));
+ }
+ 
+ const meta = document.createElement("div");
+ meta.className = "meta";
+ 
+ const userNameSpan = document.createElement("span");
+ userNameSpan.textContent = m.user || "Anônimo";
+ if(isBanned) userNameSpan.style.color = "#ff8888";
+ 
+ const timeSpan = document.createElement("span");
+ timeSpan.className = "timestamp";
+ timeSpan.textContent = formatTimestamp(m.ts);
+ 
+ meta.appendChild(userNameSpan);
+ meta.appendChild(timeSpan);
+ 
+ right.appendChild(bubble);
+ right.appendChild(meta);
+ 
+ wrap.appendChild(av);
+ wrap.appendChild(right);
+ 
+ return wrap;
+}
+
 /* LISTENER */
 const q = query(MESSAGES, orderBy("ts","asc"), limit(200));
 
@@ -712,18 +867,15 @@ onSnapshot(q, (snap) => {
  const currentUser = getUser();
  const newMessages = [];
  
- // Processa mudanças
  snap.docChanges().forEach(change => {
   if (change.type === "added") {
    const msgData = change.doc.data();
    const msgId = change.doc.id;
    
-   // Se é nova mensagem e não foi processada ainda
    if (!lastProcessedMessages.has(msgId)) {
     lastProcessedMessages.add(msgId);
     newMessages.push({ id: msgId, data: msgData });
     
-    // Limitar o cache
     if (lastProcessedMessages.size > 300) {
      const toDelete = [...lastProcessedMessages][0];
      lastProcessedMessages.delete(toDelete);
@@ -732,7 +884,6 @@ onSnapshot(q, (snap) => {
   }
  });
  
- // Atualiza o feed
  feed.innerHTML = "";
  snap.forEach(doc => {
   const m = doc.data();
@@ -740,71 +891,32 @@ onSnapshot(q, (snap) => {
  });
  feed.scrollTop = feed.scrollHeight;
  
- // Mostra notificações para novas mensagens (exceto a própria)
  newMessages.forEach(({ data: m }) => {
-  if (m.user !== currentUser) {
+  if (m.user !== currentUser && !isUserBanned(m.user)) {
    const timestampFormatted = formatTimestamp(m.ts);
    showNotification(m.user, m.body, timestampFormatted);
   }
  });
 });
 
-function messageEl(m){
- const currentUser = getUser();
- const mine = m.user === currentUser;
-
- const wrap = document.createElement("div");
- wrap.className = "msg" + (mine ? " me" : "");
-
- const av = document.createElement("div");
- av.className = "avatar";
- av.textContent = m.user ? m.user[0] : "?";
-
- const right = document.createElement("div");
-
- const bubble = document.createElement("div");
- bubble.className = "bubble";
- bubble.innerHTML = linkify(escapeHtml(m.body));
-
- const meta = document.createElement("div");
- meta.className = "meta";
- 
- const userNameSpan = document.createElement("span");
- userNameSpan.textContent = m.user || "Anônimo";
- 
- const timeSpan = document.createElement("span");
- timeSpan.className = "timestamp";
- timeSpan.textContent = formatTimestamp(m.ts);
- 
- meta.appendChild(userNameSpan);
- meta.appendChild(timeSpan);
-
- right.appendChild(bubble);
- right.appendChild(meta);
-
- wrap.appendChild(av);
- wrap.appendChild(right);
-
- return wrap;
-}
-
 /* FECHAR EMOJI PANEL AO CLICAR FORA */
 document.addEventListener("click", (e) => {
  const emojiPanel = document.getElementById("emojiPanel");
  const emojiBtn = document.getElementById("emojiBtn");
- const isClickInside = emojiPanel.contains(e.target) || emojiBtn.contains(e.target);
- if (!isClickInside && emojiPanel.style.display === "flex") {
-  emojiPanel.style.display = "none";
+ if (emojiPanel && emojiBtn) {
+  const isClickInside = emojiPanel.contains(e.target) || emojiBtn.contains(e.target);
+  if (!isClickInside && emojiPanel.style.display === "flex") {
+   emojiPanel.style.display = "none";
+  }
  }
 });
 
-/* DETECTAR QUANDO A PÁGINA GANHA FOCO PARA ATUALIZAR TÍTULO */
+/* DETECTAR QUANDO A PÁGINA GANHA FOCO */
 let unreadCount = 0;
 let originalTitle = document.title;
 
 document.addEventListener("visibilitychange", () => {
  if (!document.hidden) {
-  // Página visível, resetar contador e título
   unreadCount = 0;
   document.title = originalTitle;
  } else {
@@ -812,7 +924,6 @@ document.addEventListener("visibilitychange", () => {
  }
 });
 
-/* ATUALIZAR TÍTULO COM CONTADOR DE NÃO LIDAS */
 function updateTitleWithUnread(count){
  if (document.hidden && count > 0) {
   document.title = `(${count}) ${originalTitle}`;
@@ -820,9 +931,6 @@ function updateTitleWithUnread(count){
   document.title = originalTitle;
  }
 }
-
-// Incrementar contador quando receber mensagem (apenas se página invisível)
-let lastMessageTimestamp = 0;
 
 setInterval(() => {
  if (document.hidden && unreadCount > 0) {
