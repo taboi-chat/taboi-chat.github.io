@@ -32,6 +32,185 @@ body{
     color:#ff4d4d;
     font-weight:bold;
 }
+
+/* ===== MODAL DE VERSÃO DESATUALIZADA ===== */
+.version-modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    backdrop-filter:blur(8px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:10000;
+    animation:fadeIn 0.3s ease-out;
+}
+
+.version-modal{
+    background:linear-gradient(135deg, #1a1c22, #131518);
+    border-radius:24px;
+    padding:32px;
+    max-width:480px;
+    width:90%;
+    box-shadow:0 20px 40px rgba(0,0,0,0.5);
+    border:1px solid rgba(255,122,0,0.3);
+    position:relative;
+    animation:slideUp 0.3s ease-out;
+}
+
+.version-modal-close{
+    position:absolute;
+    top:16px;
+    right:20px;
+    background:none;
+    border:none;
+    color:#888;
+    font-size:28px;
+    cursor:pointer;
+    transition:color 0.2s;
+    font-weight:bold;
+}
+
+.version-modal-close:hover{
+    color:#ff7a00;
+}
+
+.version-modal-icon{
+    font-size:48px;
+    text-align:center;
+    margin-bottom:16px;
+}
+
+.version-modal h2{
+    margin:0 0 8px 0;
+    background:linear-gradient(90deg,#ff7a00,#ff8f26);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    font-size:28px;
+    text-align:center;
+}
+
+.version-modal-subtitle{
+    text-align:center;
+    color:#ff7a00;
+    font-size:14px;
+    margin-bottom:20px;
+    letter-spacing:1px;
+}
+
+.version-modal-current{
+    background:rgba(255,68,68,0.1);
+    border:1px solid #ff4444;
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:16px;
+    text-align:center;
+}
+
+.version-modal-current span{
+    color:#ff8888;
+    font-weight:bold;
+}
+
+.version-modal-new{
+    background:rgba(76,175,80,0.1);
+    border:1px solid #4caf50;
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:20px;
+    text-align:center;
+}
+
+.version-modal-new span{
+    color:#81c784;
+    font-weight:bold;
+    font-size:18px;
+}
+
+.version-modal-description{
+    background:#0b0d10;
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:24px;
+    color:#aaa;
+    font-size:14px;
+    line-height:1.6;
+    text-align:left;
+}
+
+.version-modal-buttons{
+    display:flex;
+    gap:12px;
+    justify-content:center;
+}
+
+.version-modal-btn{
+    padding:12px 32px;
+    border:none;
+    border-radius:12px;
+    font-weight:700;
+    cursor:pointer;
+    transition:transform 0.2s;
+    font-size:16px;
+}
+
+.version-modal-btn-primary{
+    background:linear-gradient(90deg,#ff7a00,#ff8f26);
+    color:#111;
+}
+
+.version-modal-btn-secondary{
+    background:#2a2c32;
+    color:#fff;
+}
+
+.version-modal-btn:hover{
+    transform:scale(1.02);
+}
+
+@keyframes fadeIn{
+    from{opacity:0}
+    to{opacity:1}
+}
+
+@keyframes slideUp{
+    from{
+        transform:translateY(30px);
+        opacity:0;
+    }
+    to{
+        transform:translateY(0);
+        opacity:1;
+    }
+}
+
+/* ===== TOAST ===== */
+.toast-version{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:linear-gradient(135deg,#ff7a00,#ff8f26);
+    color:#111;
+    padding:10px 20px;
+    border-radius:10px;
+    font-weight:bold;
+    z-index:10001;
+    animation:slideIn 0.3s ease-out;
+    font-size:14px;
+}
+
+@keyframes slideIn{
+    from{
+        transform:translateX(-50%) translateY(100px);
+        opacity:0;
+    }
+    to{
+        transform:translateX(-50%) translateY(0);
+        opacity:1;
+    }
+}
 </style>
 </head>
 
@@ -42,32 +221,231 @@ body{
 <script>
 /*
     CONFIGURAÇÃO DAS VERSÕES
+    ========================
+    - Adicione todas as versões aqui
+    - Marque a versão mais recente com latest: true
+    - Adicione descrição e número da versão para exibir no modal
 */
 const versions = [
-    { file: "v2.html" },
-    { file: "v3.html", latest:true },
-    { file: "v2.6.html" },
-    { file: "v1.html" }
+    { 
+        file: "v1.html", 
+        version: "v1.0",
+        name: "Taboi-Chat v1",
+        description: "Versão inicial do chat com funcionalidades básicas de mensagens.",
+        releaseDate: "2025"
+    },
+    { 
+        file: "v2.html", 
+        version: "v2.0",
+        name: "Taboi-Chat v2",
+        description: "Adicionado emojis, links clicáveis e correção em bugs na interface.",
+        releaseDate: "2025"
+    },
+    { 
+        file: "v2.6.html", 
+        version: "v2.6",
+        name: "Taboi-Chat v2.6",
+        description: "Novo layout com design moderno, painel de emojis categorizado e otimizações de desempenho. Adicionado notificações.",
+        releaseDate: "2026"
+    },
+    { 
+        file: "v3.html", 
+        version: "v3.0",
+        name: "Taboi-Chat v3",
+        description: "Sistema de login com códigos de acesso, modais estilizados, notificações customizadas e interface totalmente renovada.",
+        latest: true,
+        releaseDate: "2026"
+    }
 ];
 
 const statusBox = document.getElementById("status");
 
 /*
-    PROCURA A VERSÃO MAIS RECENTE
+    FUNÇÃO PARA MOSTRAR TOAST
 */
-const latest = versions.find(v => v.latest === true);
-
-/*
-    REDIRECIONA IMEDIATAMENTE
-*/
-if (latest && latest.file) {
-    window.location.replace("/" + latest.file);
+function showToast(message) {
+    const existingToast = document.querySelector('.toast-version');
+    if (existingToast) existingToast.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast-version';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease-out reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
 
 /*
-    ERRO SE NÃO EXISTIR VERSÃO
+    FUNÇÃO PARA CRIAR MODAL DE VERSÃO DESATUALIZADA
 */
-else {
+function showVersionModal(currentVersion, latestVersion) {
+    // Remove modal existente se houver
+    const existingModal = document.querySelector('.version-modal-overlay');
+    if (existingModal) existingModal.remove();
+    
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'version-modal-overlay';
+    
+    // Determina o ícone baseado na diferença de versão
+    const getIcon = () => {
+        const currentNum = parseFloat(currentVersion.version.replace('v', ''));
+        const latestNum = parseFloat(latestVersion.version.replace('v', ''));
+        const diff = latestNum - currentNum;
+        
+        if (diff >= 1) return '🚀';
+        if (diff >= 0.5) return '✨';
+        return '📢';
+    };
+    
+    modalOverlay.innerHTML = `
+        <div class="version-modal">
+            <button class="version-modal-close" id="closeModalBtn">✕</button>
+            <div class="version-modal-icon">${getIcon()}</div>
+            <h2>Atualização Disponível!</h2>
+            <div class="version-modal-subtitle">Uma nova versão do Taboi-Chat está disponível</div>
+            
+            <div class="version-modal-current">
+                📌 Versão atual: <span>${currentVersion.version}</span> - ${currentVersion.name}
+            </div>
+            
+            <div class="version-modal-new">
+                🎉 Nova versão: <span>${latestVersion.version}</span> - ${latestVersion.name}
+            </div>
+            
+            <div class="version-modal-description">
+                <strong>📋 O que há de novo na ${latestVersion.version}:</strong><br><br>
+                ${latestVersion.description}<br><br>
+                <small>📅 Lançada em: ${latestVersion.releaseDate}</small>
+            </div>
+            
+            <div class="version-modal-buttons">
+                <button class="version-modal-btn version-modal-btn-secondary" id="stayBtn">Ficar nesta versão</button>
+                <button class="version-modal-btn version-modal-btn-primary" id="visitBtn">Visitar nova versão →</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modalOverlay);
+    
+    // Eventos dos botões
+    const closeBtn = modalOverlay.querySelector('#closeModalBtn');
+    const stayBtn = modalOverlay.querySelector('#stayBtn');
+    const visitBtn = modalOverlay.querySelector('#visitBtn');
+    
+    // Fechar modal
+    const closeModal = () => {
+        modalOverlay.style.animation = 'fadeIn 0.3s ease-out reverse';
+        setTimeout(() => modalOverlay.remove(), 300);
+        // Salvar que o usuário viu o aviso
+        localStorage.setItem('taboi_version_notified', latestVersion.version);
+        showToast(`Você pode visitar a nova versão a qualquer momento.`);
+    };
+    
+    closeBtn.onclick = closeModal;
+    stayBtn.onclick = closeModal;
+    
+    // Visitar nova versão
+    visitBtn.onclick = () => {
+        // Salvar que o usuário está ciente da nova versão
+        localStorage.setItem('taboi_version_notified', latestVersion.version);
+        // Redirecionar para a nova versão
+        window.location.href = latestVersion.file;
+    };
+    
+    // Fechar ao clicar fora (opcional)
+    modalOverlay.onclick = (e) => {
+        if (e.target === modalOverlay) {
+            closeModal();
+        }
+    };
+}
+
+/*
+    PROCURA A VERSÃO MAIS RECENTE
+*/
+const latestVersion = versions.find(v => v.latest === true);
+const currentUrl = window.location.pathname;
+const currentFileName = currentUrl.substring(currentUrl.lastIndexOf('/') + 1);
+
+/*
+    DETECTA A VERSÃO ATUAL BASEADA NO ARQUIVO
+*/
+let currentVersion = null;
+
+// Se estiver na raiz (index.html), não mostrar modal
+if (currentFileName === '' || currentFileName === '/' || currentFileName === 'index.html') {
+    // Está na página inicial, redirecionar para a versão mais recente
+    if (latestVersion && latestVersion.file) {
+        // Verificar se já foi notificado antes
+        const lastNotified = localStorage.getItem('taboi_version_notified');
+        
+        if (lastNotified !== latestVersion.version) {
+            // Mostrar modal informativo sobre a nova versão
+            setTimeout(() => {
+                showVersionModal({ 
+                    version: '?', 
+                    name: 'Página inicial' 
+                }, latestVersion);
+            }, 500);
+        }
+        
+        // Redirecionar após 2 segundos (ou imediatamente se já notificado)
+        setTimeout(() => {
+            window.location.href = latestVersion.file;
+        }, lastNotified === latestVersion.version ? 0 : 2500);
+    } else {
+        statusBox.innerHTML = `
+            <div class="error">
+                ERRO: nenhuma versão do Taboi-Chat encontrada.
+            </div>
+            <br>
+            Defina uma versão com <b>latest:true</b>.
+        `;
+    }
+} else {
+    // Está em uma versão específica, verificar se é a mais recente
+    currentVersion = versions.find(v => v.file === currentFileName);
+    
+    if (!currentVersion) {
+        // Arquivo não está na lista de versões
+        statusBox.innerHTML = `
+            <div class="error">
+                ERRO: versão "${currentFileName}" não encontrada na lista.
+            </div>
+        `;
+    } else if (latestVersion && currentVersion.file !== latestVersion.file) {
+        // Está em uma versão antiga! Mostrar modal de atualização
+        
+        // Verificar se já foi notificado para esta versão
+        const lastNotified = localStorage.getItem('taboi_version_notified');
+        const shouldNotify = lastNotified !== latestVersion.version;
+        
+        // Adicionar um pequeno atraso para garantir que o chat carregue primeiro
+        window.addEventListener('load', () => {
+            if (shouldNotify) {
+                setTimeout(() => {
+                    showVersionModal(currentVersion, latestVersion);
+                }, 1000);
+            } else {
+                // Mostrar apenas um toast sutil
+                setTimeout(() => {
+                    showToast(`📱 Versão ${latestVersion.version} disponível! Recarregue para atualizar.`);
+                }, 1500);
+            }
+        });
+        
+        // Redirecionar normalmente para a versão solicitada (deixar o usuário na versão antiga se quiser)
+        // Não forçamos redirecionamento aqui para manter a escolha do usuário
+    }
+}
+
+/*
+    SE ESTIVER NA PÁGINA INICIAL E NÃO HOUVER REDIRECIONAMENTO
+*/
+if ((currentFileName === '' || currentFileName === '/' || currentFileName === 'index.html') && !latestVersion) {
     statusBox.innerHTML = `
         <div class="error">
             ERRO: nenhuma versão do Taboi-Chat encontrada.
