@@ -1276,6 +1276,16 @@ async function descriptografarAccounts(encryptedData, senhaMestra) {
         return null;
     }
 }
+ // CORREÇÃO PARA CELULAR - FORÇAR REENVIO
+window.addEventListener('load', function() {
+ setTimeout(function() {
+  if (localStorage.getItem('taboi_user') && !currentUser) {
+   currentUser = localStorage.getItem('taboi_user');
+   showApp();
+   console.log("✅ Usuário recuperado com sucesso!");
+  }
+ }, 1000);
+});
 </script>
 <script>
 // SISTEMA DE ALERTA DE VERSÃO DESATUALIZADA
