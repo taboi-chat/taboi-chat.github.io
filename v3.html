@@ -626,28 +626,6 @@ setInterval(() => {
   }
 }, 5000);
 
-/* ===== CARREGAR ACCOUNTS.JSON ===== */
-async function loadAccounts() {
- try {
-  const response = await fetch('accounts_encrypted.json')
-  if (!response.ok) {
-   throw new Error('Arquivo accounts.json não encontrado');
-  }
-  accountsData = await response.json();
-  console.log('Accounts carregadas:', accountsData);
- } catch (error) {
-  console.error('Erro ao carregar accounts:', error);
-  // Dados de fallback caso o arquivo não exista
-  accountsData = {
-   "users": [
-    { "code": "VIC123", "name": "Vicente", "avatar": "V" },
-    { "code": "FRA789", "name": "Francisco", "avatar": "F" },
-    { "code": "MAR012", "name": "Mariana", "avatar": "M" }
-   ]
-  };
- }
-}
-
 /* ===== MODAL DE LOGIN ===== */
 function showLoginModal() {
  const modalOverlay = document.createElement('div');
@@ -1183,16 +1161,60 @@ async function init() {
 }
 
 init();
- // Função para descriptografar o arquivo
-async function descriptografarAccounts(senhaMestra) {
+/* ===== SENHA MESTRA (EMBUTIDA NO CÓDIGO) ===== */
+// ⚠️ USE A MESMA SENHA QUE VOCÊ USOU PARA CRIPTOGRAFAR!
+const MASTER_PASSWORD = "Taboi@2024Secure#Chat";
+
+/* ===== CARREGAR ACCOUNTS CRIPTOGRAFADO ===== */
+async function loadAccounts() {
+ try {
+  console.log('🔐 Carregando arquivo criptografado...');
+  
+  const response = await fetch('accounts_encrypted.json');
+  if (!response.ok) {
+   throw new Error('Arquivo accounts_encrypted.json não encontrado');
+  }
+  
+  const encryptedData = await response.json();
+  console.log('📁 Arquivo criptografado carregado');
+  
+  // Descriptografar com a senha embutida
+  const users = await descriptografarAccounts(encryptedData, MASTER_PASSWORD);
+  
+  if (users && Array.isArray(users) && users.length > 0) {
+   accountsData = { users: users };
+   console.log('✅ Accounts descriptografadas:', accountsData);
+   return;
+  }
+  
+  throw new Error('Falha na descriptografia');
+  
+ } catch (error) {
+  console.error('❌ Erro:', error);
+  
+  // FALLBACK APENAS PARA EMERGÊNCIA
+  accountsData = {
+   "users": [
+    { "code": "VIC123", "name": "Vicente", "avatar": "V" },
+    { "code": "FRA789", "name": "Francisco", "avatar": "F" },
+    { "code": "MAR012", "name": "Mariana", "avatar": "M" }
+   ]
+  };
+ }
+}
+
+/* ===== FUNÇÃO PARA DESCRIPTOGRAFAR ===== */
+async function descriptografarAccounts(encryptedData, senhaMestra) {
     try {
-        const response = await fetch('accounts_encrypted.json');
-        const encryptedData = await response.json();
+        // Verificar formato
+        if (!encryptedData || !encryptedData.data) {
+            throw new Error('Formato inválido');
+        }
         
         // Converter base64 para bytes
         const encryptedBytes = Uint8Array.from(atob(encryptedData.data), c => c.charCodeAt(0));
         
-        // Extrair salt, iv e dados
+        // Extrair salt (16 primeiros bytes), iv (próximos 12), dados (restante)
         const salt = encryptedBytes.slice(0, 16);
         const iv = encryptedBytes.slice(16, 28);
         const data = encryptedBytes.slice(28);
@@ -1227,17 +1249,22 @@ async function descriptografarAccounts(senhaMestra) {
             data
         );
         
+        // Converter para JSON
         const decoder = new TextDecoder();
-        const users = JSON.parse(decoder.decode(decrypted));
+        const result = JSON.parse(decoder.decode(decrypted));
         
-        // Se tiver metadados, extrair só os usuários
-        if (users.users && Array.isArray(users.users)) {
-            return users.users;
+        // Retornar array de usuários
+        if (result.users && Array.isArray(result.users)) {
+            return result.users;
+        }
+        if (Array.isArray(result)) {
+            return result;
         }
         
-        return users;
+        return null;
+        
     } catch (error) {
-        console.error('Erro ao descriptografar:', error);
+        console.error('Erro na descriptografia:', error);
         return null;
     }
 }
