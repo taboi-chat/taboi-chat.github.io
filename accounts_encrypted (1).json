@@ -1,0 +1,7 @@
+{
+  "encrypted": true,
+  "algorithm": "AES-256-GCM",
+  "iterations": 100000,
+  "timestamp": "2026-05-04T22:42:32.583Z",
+  "data": "APhp9/dTYpn3bizvkY4hupwiIpzlnHWf/TYRZSr9sXDMqMY/IN0kAa1WwBGEHpO27jDW8ZMEBoFyKNnXe2ka9zNegJdQutxhbxRfcb4vYbMwE/RoKMwLnaW20Olh/7GcNtFEbXiAFAqhTLS/G2F05/pblJWw8rB4WchleLxcD5SiQ3sGqqkrE4efckHsuD9I8kjFFjAbVj+iWeI6ZT3htI1anyAvDnFMMJOd0XsXzrq6FJ4ACyj2RYxlu4TzPi75DCmFCHOZ7fNP5VYgHYXZCKCbgixv1D9rWoBjVxHE+E0iejlYjGKVcwWcBeeeMj4KYkAaJscJjYrsmXCOgjURTGdIwf8/ry5XCwtX+DIZoW9MJuSf3U0u7wESeuY7+JurhsbqXTBUz6dL1/IRwQt2tDSepYJ5t30ey+YqKG0+KAUCOvo046JD2ycOfu4MunVYfOLAdNw443nlJa3IDjEYt1TYgsi8j+GVhdziNNO6mOaWOjKBO6GPyhImQSI="
+}
