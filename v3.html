@@ -1183,6 +1183,64 @@ async function init() {
 }
 
 init();
+ // Função para descriptografar o arquivo
+async function descriptografarAccounts(senhaMestra) {
+    try {
+        const response = await fetch('accounts_encrypted.json');
+        const encryptedData = await response.json();
+        
+        // Converter base64 para bytes
+        const encryptedBytes = Uint8Array.from(atob(encryptedData.data), c => c.charCodeAt(0));
+        
+        // Extrair salt, iv e dados
+        const salt = encryptedBytes.slice(0, 16);
+        const iv = encryptedBytes.slice(16, 28);
+        const data = encryptedBytes.slice(28);
+        
+        // Derivar chave da senha
+        const encoder = new TextEncoder();
+        const keyMaterial = await crypto.subtle.importKey(
+            'raw',
+            encoder.encode(senhaMestra),
+            'PBKDF2',
+            false,
+            ['deriveKey']
+        );
+        
+        const key = await crypto.subtle.deriveKey(
+            {
+                name: 'PBKDF2',
+                salt: salt,
+                iterations: 100000,
+                hash: 'SHA-256'
+            },
+            keyMaterial,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['decrypt']
+        );
+        
+        // Descriptografar
+        const decrypted = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv: iv },
+            key,
+            data
+        );
+        
+        const decoder = new TextDecoder();
+        const users = JSON.parse(decoder.decode(decrypted));
+        
+        // Se tiver metadados, extrair só os usuários
+        if (users.users && Array.isArray(users.users)) {
+            return users.users;
+        }
+        
+        return users;
+    } catch (error) {
+        console.error('Erro ao descriptografar:', error);
+        return null;
+    }
+}
 </script>
 
 </body>
