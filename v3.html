@@ -629,7 +629,7 @@ setInterval(() => {
 /* ===== CARREGAR ACCOUNTS.JSON ===== */
 async function loadAccounts() {
  try {
-  const response = await fetch('accounts.json');
+  const response = await fetch('accounts_encrypted.json')
   if (!response.ok) {
    throw new Error('Arquivo accounts.json não encontrado');
   }
