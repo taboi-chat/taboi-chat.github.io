@@ -984,7 +984,148 @@ emojiPanel.style.display = "none";
 
 </script>
 
-
+<script>
+// SISTEMA DE ALERTA DE VERSÃO DESATUALIZADA
+(function() {
+    // CONFIGURAÇÃO DAS VERSÕES
+    const versions = [
+        { file: "v1.html", version: "v1.0", name: "Taboi-Chat v1", latest: false },
+        { file: "v2.html", version: "v2.0", name: "Taboi-Chat v2", latest: false },
+        { file: "v2.6.html", version: "v2.6", name: "Taboi-Chat v2.6", latest: false },
+        { file: "v3.html", version: "v3.0", name: "Taboi-Chat v3", latest: true }
+    ];
+    
+    const currentFile = window.location.pathname.split('/').pop();
+    const currentVersion = versions.find(v => v.file === currentFile);
+    const latestVersion = versions.find(v => v.latest === true);
+    
+    // Se NÃO é a versão mais recente
+    if (currentVersion && latestVersion && currentFile !== latestVersion.file) {
+        const notified = localStorage.getItem('taboi_version_notified');
+        
+        if (notified !== latestVersion.version) {
+            // Esperar a página carregar
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    // Criar modal
+                    const modal = document.createElement('div');
+                    modal.style.cssText = `
+                        position: fixed;
+                        inset: 0;
+                        background: rgba(0,0,0,0.9);
+                        backdrop-filter: blur(10px);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 999999;
+                        animation: fadeInVersao 0.3s ease-out;
+                    `;
+                    
+                    modal.innerHTML = `
+                        <div style="background: linear-gradient(135deg, #1a1c22, #131518); border-radius: 28px; padding: 32px; max-width: 480px; width: 90%; border: 1px solid rgba(255,122,0,0.3); animation: slideUpVersao 0.4s ease-out;">
+                            <div style="text-align: center; font-size: 54px; margin-bottom: 16px;">🎉</div>
+                            <h2 style="background: linear-gradient(90deg,#ff7a00,#ff8f26); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 28px; text-align: center; margin: 0 0 8px 0;">Atualização Disponível!</h2>
+                            <p style="text-align: center; color: #ff7a00; font-size: 13px; margin-bottom: 24px;">Nova versão do Taboi-Chat</p>
+                            
+                            <div style="background: rgba(244,67,54,0.1); border: 1px solid #f44336; border-radius: 16px; padding: 14px; margin-bottom: 16px; text-align: center;">
+                                📌 Versão atual: <span style="color: #ff8888; font-weight: bold;">${currentVersion.version}</span> - ${currentVersion.name}
+                            </div>
+                            
+                            <div style="background: rgba(76,175,80,0.1); border: 1px solid #4caf50; border-radius: 16px; padding: 14px; margin-bottom: 20px; text-align: center;">
+                                🎯 Nova versão: <span style="color: #81c784; font-weight: bold; font-size: 18px;">${latestVersion.version}</span> - ${latestVersion.name}
+                            </div>
+                            
+                            <div style="background: #0b0d10; border-radius: 16px; padding: 16px; margin-bottom: 24px; color: #aaa; font-size: 14px; line-height: 1.6;">
+                                <strong style="color: #ff7a00;">✨ Novidades da versão ${latestVersion.version}:</strong><br><br>
+                                • Sistema de login com códigos de acesso<br>
+                                • Modais estilizados e animados<br>
+                                • Interface glassmorphism renovada<br>
+                                • Sistema de banimento de usuários<br>
+                                • Melhorias de performance
+                            </div>
+                            
+                            <div style="display: flex; gap: 12px; justify-content: center;">
+                                <button id="stayBtn" style="background: #2a2c32; color: #fff; padding: 12px 28px; border: none; border-radius: 14px; font-weight: 700; cursor: pointer;">🔒 Continuar nesta versão</button>
+                                <button id="updateBtn" style="background: linear-gradient(90deg,#ff7a00,#ff8f26); color: #111; padding: 12px 28px; border: none; border-radius: 14px; font-weight: 700; cursor: pointer;">🚀 Atualizar agora</button>
+                            </div>
+                            <button id="closeModalBtn" style="position: absolute; top: 20px; right: 24px; background: none; border: none; color: #666; font-size: 28px; cursor: pointer;">✕</button>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(modal);
+                    
+                    // Animações
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        @keyframes fadeInVersao { from { opacity: 0; } to { opacity: 1; } }
+                        @keyframes slideUpVersao { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                    `;
+                    document.head.appendChild(style);
+                    
+                    const closeModal = () => {
+                        modal.style.animation = 'fadeInVersao 0.3s ease-out reverse';
+                        setTimeout(() => modal.remove(), 300);
+                        localStorage.setItem('taboi_version_notified', latestVersion.version);
+                    };
+                    
+                    document.getElementById('closeModalBtn').onclick = closeModal;
+                    document.getElementById('stayBtn').onclick = closeModal;
+                    document.getElementById('updateBtn').onclick = () => {
+                        localStorage.setItem('taboi_version_notified', latestVersion.version);
+                        window.location.href = latestVersion.file;
+                    };
+                    
+                    modal.onclick = (e) => {
+                        if (e.target === modal) closeModal();
+                    };
+                }, 1000);
+            });
+        } else {
+            // Já foi notificado, mostra apenas um toast
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    const toast = document.createElement('div');
+                    toast.textContent = `✨ Nova versão ${latestVersion.version} disponível! Clique para atualizar.`;
+                    toast.style.cssText = `
+                        position: fixed;
+                        bottom: 30px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background: linear-gradient(135deg,#ff7a00,#ff8f26);
+                        color: #111;
+                        padding: 14px 28px;
+                        border-radius: 50px;
+                        font-weight: bold;
+                        z-index: 99999;
+                        cursor: pointer;
+                        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                        animation: slideInToast 0.3s ease-out;
+                    `;
+                    
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        @keyframes slideInToast {
+                            from { transform: translateX(-50%) translateY(100px); opacity: 0; }
+                            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                    
+                    toast.onclick = () => {
+                        window.location.href = latestVersion.file;
+                    };
+                    
+                    document.body.appendChild(toast);
+                    
+                    setTimeout(() => {
+                        if (toast.parentNode) toast.remove();
+                    }, 8000);
+                }, 1500);
+            });
+        }
+    }
+})();
+</script>
 
 </body>
 
