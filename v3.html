@@ -963,6 +963,13 @@ document.getElementById("linkBtn").onclick = () => {
 document.getElementById("sendBtn").onclick = send;
 
 async function send(){
+ // VERIFICA SE O ACCOUNTS FOI CARREGADO
+ if (!accountsData || !accountsData.users) {
+  showToast("🔐 Aguarde, sistema ainda está carregando...", "error");
+  console.log("Aguardando accountsData:", accountsData);
+  return;
+ }
+ 
  if(!currentUser){
   showToast("Faça login primeiro", "error");
   return;
@@ -994,6 +1001,7 @@ async function send(){
    user: currentUser,
    ts: serverTimestamp()
   });
+  console.log("✅ Mensagem enviada por:", currentUser);
  } catch(error) {
   console.error("Erro ao enviar:", error);
   showToast("Erro ao enviar mensagem", "error");
