@@ -1276,16 +1276,23 @@ async function descriptografarAccounts(encryptedData, senhaMestra) {
         return null;
     }
 }
- // CORREÇÃO PARA CELULAR - FORÇAR REENVIO
-window.addEventListener('load', function() {
- setTimeout(function() {
-  if (localStorage.getItem('taboi_user') && !currentUser) {
-   currentUser = localStorage.getItem('taboi_user');
-   showApp();
-   console.log("✅ Usuário recuperado com sucesso!");
-  }
- }, 1000);
-});
+
+ // CORREÇÃO DEFINITIVA PARA CELULAR - SOBRESCREVE O BOTÃO ENVIAR
+document.getElementById("sendBtn").onclick = async function() {
+ const user = localStorage.getItem('taboi_user');
+ if (!user) {
+  showToast("Faça login primeiro", "error");
+  return;
+ }
+ const msg = document.getElementById("text").value.trim();
+ if (!msg) return;
+ document.getElementById("text").value = "";
+ try {
+  await addDoc(MESSAGES, { body: msg, user: user, ts: serverTimestamp() });
+ } catch(e) {
+  alert("Erro: " + e.message);
+ }
+};
 </script>
 <script>
 // SISTEMA DE ALERTA DE VERSÃO DESATUALIZADA
