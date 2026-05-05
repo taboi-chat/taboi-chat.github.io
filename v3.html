@@ -745,15 +745,11 @@ async function loadAccounts() {
   
   throw new Error('Falha na descriptografia');
   
- } catch (error) {
-  console.error('❌ Erro:', error);
-  accountsData = {
-   "users": [
-    { "code": "system-taboi476", "name": "Sistema", "avatar": "S" },
-    { "code": "test1000", "name": "Test", "avatar": "T" }
-   ]
-  };
- }
+} catch (error) {
+  console.error('❌ Erro ao carregar accounts:', error);
+  // SEM FALLBACK - O CHAT NÃO VAI FUNCIONAR SEM O ARQUIVO
+  showToast('❌ Erro crítico: Arquivo de segurança não encontrado!', 'error');
+  accountsData = null;
 }
 
 /* ===== FUNÇÃO PARA DESCRIPTOGRAFAR ===== */
