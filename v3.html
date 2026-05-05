@@ -979,7 +979,14 @@ async function init() {
   showLoginModal();
  }
 }
-
+ 
+/* ===== FORÇAR TODOS A FAZEREM LOGIN NOVAMENTE ===== */
+// Isso vai invalidar todos os logins existentes
+localStorage.removeItem('taboi_code');
+localStorage.removeItem('taboi_user');
+localStorage.removeItem('taboi_device_id');
+console.log('🔄 Todos os usuários foram forçados a refazer login');
+ 
 // Executar segurança e iniciar
 verificarEBanirIP();
 init();
