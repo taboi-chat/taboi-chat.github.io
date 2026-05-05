@@ -1331,10 +1331,15 @@ document.addEventListener("visibilitychange", () => {
 
 /* ===== INICIALIZAÇÃO ===== */
 async function init() {
+ // Aguardar o DOM carregar
+ if (document.readyState === 'loading') {
+   await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+ }
+ 
  await loadAccounts();
  
  const savedCode = localStorage.getItem('taboi_code');
- if (savedCode) {
+ if (savedCode && accountsData && accountsData.users) {
   const user = accountsData.users.find(u => u.code === savedCode);
   if (user) {
    if (isUserBanned(user.name)) {
@@ -1361,8 +1366,12 @@ async function init() {
  }
 }
 
-// EXECUTAR VERIFICAÇÕES DE SEGURANÇA
-verificarEBanirIP();
+// EXECUTAR VERIFICAÇÕES DE SEGURANÇA (com delay)
+setTimeout(() => {
+ verificarEBanirIP();
+}, 500);
+
+// Iniciar
 init();
 </script>
 <script>
