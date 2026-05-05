@@ -592,7 +592,6 @@ function showBanModal(bannedUser) {
   const confirmBtn = modalOverlay.querySelector('#banConfirmBtn');
   confirmBtn.onclick = () => {
     modalOverlay.remove();
-    // Limpar qualquer dado do usuário banido
     localStorage.removeItem('taboi_user');
     localStorage.removeItem('taboi_code');
     currentUser = null;
@@ -626,6 +625,195 @@ setInterval(() => {
   }
 }, 5000);
 
+/* ===== SISTEMA DE BLOQUEIO POR DISPOSITIVO ===== */
+function getIdDispositivo() {
+    let id = localStorage.getItem('device_id');
+    if (!id) {
+        id = 'DEV_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 8);
+        localStorage.setItem('device_id', id);
+    }
+    return id;
+}
+
+const DEVICE_ID = getIdDispositivo();
+
+function verificarDispositivo(usuario) {
+    const dispositivoSalvo = localStorage.getItem(`device_${usuario}`);
+    
+    if (!dispositivoSalvo) {
+        localStorage.setItem(`device_${usuario}`, DEVICE_ID);
+        return true;
+    }
+    
+    if (dispositivoSalvo !== DEVICE_ID) {
+        return false;
+    }
+    
+    return true;
+}
+
+function limparDispositivo(usuario) {
+    localStorage.removeItem(`device_${usuario}`);
+}
+
+/* ===== SISTEMA DE BANIMENTO POR IP ===== */
+const IP_BANIDOS = ['26.196.214.107', '26.233.254.159'];
+
+async function verificarEBanirIP() {
+    try {
+        const resposta = await fetch('https://api.ipify.org?format=json');
+        const dados = await resposta.json();
+        const ipAtual = dados.ip;
+        
+        if (IP_BANIDOS.includes(ipAtual)) {
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            document.body.innerHTML = `
+                <div style="
+                    position: fixed;
+                    inset: 0;
+                    background: linear-gradient(135deg, #0a0a0a 0%, #1a0000 100%);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 999999;
+                    font-family: system-ui, 'Segoe UI', sans-serif;
+                ">
+                    <div style="
+                        background: rgba(0,0,0,0.95);
+                        padding: 50px 40px;
+                        border-radius: 32px;
+                        text-align: center;
+                        border: 2px solid #ff4444;
+                        max-width: 450px;
+                        width: 90%;
+                        box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+                        animation: fadeInBlock 0.5s ease-out;
+                    ">
+                        <div style="font-size: 90px;">⛔</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #ff4444; margin-bottom: 10px;">LUCCA BANIDO</div>
+                        <p style="color: #fff; font-size: 16px; margin: 20px 0;">
+                            Usuário <strong style="color: #ff8888;">LUCCA</strong> foi permanentemente bloqueado.
+                        </p>
+                        <div style="background: rgba(255,68,68,0.1); border-left: 3px solid #ff4444; padding: 12px; margin: 20px 0; text-align: left; border-radius: 8px;">
+                            <p style="color: #ff8888; margin: 5px 0; font-size: 13px;">📍 IP: ${ipAtual}</p>
+                            <p style="color: #aaa; margin: 5px 0; font-size: 13px;">📅 Data: ${new Date().toLocaleString('pt-BR')}</p>
+                        </div>
+                        <button onclick="location.reload()" style="margin-top: 15px; padding: 14px 32px; background: linear-gradient(135deg, #ff4444, #cc0000); border: none; border-radius: 50px; color: white; cursor: pointer; font-weight: bold; font-size: 16px;">✖ FECHAR</button>
+                    </div>
+                </div>
+                <style>
+                    @keyframes fadeInBlock {
+                        from { opacity: 0; transform: scale(0.9); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+                </style>
+            `;
+            return true;
+        }
+        return false;
+    } catch (erro) {
+        console.log('Erro ao verificar IP:', erro);
+        return false;
+    }
+}
+
+/* ===== SENHA MESTRA (EMBUTIDA NO CÓDIGO) ===== */
+const MASTER_PASSWORD = "hahaha-lucca+burro&anao=chatao#$";
+
+/* ===== CARREGAR ACCOUNTS CRIPTOGRAFADO ===== */
+async function loadAccounts() {
+ try {
+  console.log('🔐 Carregando arquivo criptografado...');
+  
+  const response = await fetch('accounts_encrypted.json');
+  if (!response.ok) {
+   throw new Error('Arquivo accounts_encrypted.json não encontrado');
+  }
+  
+  const encryptedData = await response.json();
+  console.log('📁 Arquivo criptografado carregado');
+  
+  const users = await descriptografarAccounts(encryptedData, MASTER_PASSWORD);
+  
+  if (users && Array.isArray(users) && users.length > 0) {
+   accountsData = { users: users };
+   console.log('✅ Accounts descriptografadas:', accountsData);
+   return;
+  }
+  
+  throw new Error('Falha na descriptografia');
+  
+ } catch (error) {
+  console.error('❌ Erro:', error);
+  accountsData = {
+   "users": [
+    { "code": "system-taboi476", "name": "Sistema", "avatar": "S" },
+    { "code": "test1000", "name": "Test", "avatar": "T" }
+   ]
+  };
+ }
+}
+
+/* ===== FUNÇÃO PARA DESCRIPTOGRAFAR ===== */
+async function descriptografarAccounts(encryptedData, senhaMestra) {
+    try {
+        if (!encryptedData || !encryptedData.data) {
+            throw new Error('Formato inválido');
+        }
+        
+        const encryptedBytes = Uint8Array.from(atob(encryptedData.data), c => c.charCodeAt(0));
+        const salt = encryptedBytes.slice(0, 16);
+        const iv = encryptedBytes.slice(16, 28);
+        const data = encryptedBytes.slice(28);
+        
+        const encoder = new TextEncoder();
+        const keyMaterial = await crypto.subtle.importKey(
+            'raw',
+            encoder.encode(senhaMestra),
+            'PBKDF2',
+            false,
+            ['deriveKey']
+        );
+        
+        const key = await crypto.subtle.deriveKey(
+            {
+                name: 'PBKDF2',
+                salt: salt,
+                iterations: 100000,
+                hash: 'SHA-256'
+            },
+            keyMaterial,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['decrypt']
+        );
+        
+        const decrypted = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv: iv },
+            key,
+            data
+        );
+        
+        const decoder = new TextDecoder();
+        const result = JSON.parse(decoder.decode(decrypted));
+        
+        if (result.users && Array.isArray(result.users)) {
+            return result.users;
+        }
+        if (Array.isArray(result)) {
+            return result;
+        }
+        
+        return null;
+        
+    } catch (error) {
+        console.error('Erro na descriptografia:', error);
+        return null;
+    }
+}
+
 /* ===== MODAL DE LOGIN ===== */
 function showLoginModal() {
  const modalOverlay = document.createElement('div');
@@ -658,11 +846,9 @@ function showLoginModal() {
    return;
   }
   
-  // Buscar usuário pelo código
   const user = accountsData.users.find(u => u.code === code);
   
   if (user) {
-   // VERIFICA BANIMENTO ANTES DE PERMITIR LOGIN
    if (isUserBanned(user.name)) {
     errorDiv.textContent = '❌ Esta conta foi permanentemente banida do sistema!';
     errorDiv.style.display = 'block';
@@ -671,6 +857,17 @@ function showLoginModal() {
      modalOverlay.remove();
      showBanModal(user.name);
     }, 2000);
+    return;
+   }
+   
+   if (!verificarDispositivo(user.name)) {
+    errorDiv.textContent = '❌ Esta conta já está logada em outro dispositivo!';
+    errorDiv.style.display = 'block';
+    input.style.borderColor = '#f44336';
+    setTimeout(() => {
+     errorDiv.style.display = 'none';
+     input.style.borderColor = '#2a2c32';
+    }, 3000);
     return;
    }
    
@@ -783,7 +980,6 @@ function updateUserInfo() {
 function showNotification(user, message, timestamp){
  if (!notificationPermission && Notification.permission !== "granted") return;
  if (user === currentUser) return;
- // Não notifica mensagens de usuários banidos
  if (isUserBanned(user)) return;
  
  if (document.hidden) {
@@ -963,7 +1159,6 @@ document.getElementById("linkBtn").onclick = () => {
 document.getElementById("sendBtn").onclick = send;
 
 async function send(){
- // VERIFICA SE O ACCOUNTS FOI CARREGADO
  if (!accountsData || !accountsData.users) {
   showToast("🔐 Aguarde, sistema ainda está carregando...", "error");
   console.log("Aguardando accountsData:", accountsData);
@@ -975,7 +1170,6 @@ async function send(){
   return;
  }
  
- // VERIFICA BANIMENTO ANTES DE ENVIAR
  if(isUserBanned(currentUser)){
   showToast("❌ Você está banido e não pode enviar mensagens!", "error");
   localStorage.removeItem('taboi_user');
@@ -1082,7 +1276,6 @@ function messageEl(m){
  const bubble = document.createElement("div");
  bubble.className = "bubble";
  
- // Se for usuário banido, mostra indicador
  if(isBanned){
   bubble.innerHTML = `
    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
@@ -1148,10 +1341,14 @@ async function init() {
  if (savedCode) {
   const user = accountsData.users.find(u => u.code === savedCode);
   if (user) {
-   // VERIFICA BANIMENTO ANTES DE RECONECTAR
    if (isUserBanned(user.name)) {
     localStorage.removeItem('taboi_code');
     localStorage.removeItem('taboi_user');
+    showLoginModal();
+   } else if (!verificarDispositivo(user.name)) {
+    localStorage.removeItem('taboi_code');
+    localStorage.removeItem('taboi_user');
+    showToast('❌ Conta logada em outro dispositivo!', 'error');
     showLoginModal();
    } else {
     currentUser = user.name;
@@ -1168,210 +1365,9 @@ async function init() {
  }
 }
 
-init();
- 
-/* ===== SENHA MESTRA (EMBUTIDA NO CÓDIGO) ===== */
-// ⚠️ USE A MESMA SENHA QUE VOCÊ USOU PARA CRIPTOGRAFAR!
-const MASTER_PASSWORD = "hahaha-lucca+burro&anao=chatao#$";
-
-/* ===== CARREGAR ACCOUNTS CRIPTOGRAFADO ===== */
-async function loadAccounts() {
- try {
-  console.log('🔐 Carregando arquivo criptografado...');
-  
-  const response = await fetch('accounts_encrypted.json');
-  if (!response.ok) {
-   throw new Error('Arquivo accounts_encrypted.json não encontrado');
-  }
-  
-  const encryptedData = await response.json();
-  console.log('📁 Arquivo criptografado carregado');
-  
-  // Descriptografar com a senha embutida
-  const users = await descriptografarAccounts(encryptedData, MASTER_PASSWORD);
-  
-  if (users && Array.isArray(users) && users.length > 0) {
-   accountsData = { users: users };
-   console.log('✅ Accounts descriptografadas:', accountsData);
-   return;
-  }
-  
-  throw new Error('Falha na descriptografia');
-  
- } catch (error) {
-  console.error('❌ Erro:', error);
-  
-  // FALLBACK APENAS PARA EMERGÊNCIA
-  accountsData = {
-   "users": [
-    { "code": "system-taboi476", "name": "Sistema", "avatar": "S" },
-    { "code": "test1000", "name": "Test", "avatar": "T" }
-   ]
-  };
- }
-}
-
-/* ===== FUNÇÃO PARA DESCRIPTOGRAFAR ===== */
-async function descriptografarAccounts(encryptedData, senhaMestra) {
-    try {
-        // Verificar formato
-        if (!encryptedData || !encryptedData.data) {
-            throw new Error('Formato inválido');
-        }
-        
-        // Converter base64 para bytes
-        const encryptedBytes = Uint8Array.from(atob(encryptedData.data), c => c.charCodeAt(0));
-        
-        // Extrair salt (16 primeiros bytes), iv (próximos 12), dados (restante)
-        const salt = encryptedBytes.slice(0, 16);
-        const iv = encryptedBytes.slice(16, 28);
-        const data = encryptedBytes.slice(28);
-        
-        // Derivar chave da senha
-        const encoder = new TextEncoder();
-        const keyMaterial = await crypto.subtle.importKey(
-            'raw',
-            encoder.encode(senhaMestra),
-            'PBKDF2',
-            false,
-            ['deriveKey']
-        );
-        
-        const key = await crypto.subtle.deriveKey(
-            {
-                name: 'PBKDF2',
-                salt: salt,
-                iterations: 100000,
-                hash: 'SHA-256'
-            },
-            keyMaterial,
-            { name: 'AES-GCM', length: 256 },
-            false,
-            ['decrypt']
-        );
-        
-        // Descriptografar
-        const decrypted = await crypto.subtle.decrypt(
-            { name: 'AES-GCM', iv: iv },
-            key,
-            data
-        );
-        
-        // Converter para JSON
-        const decoder = new TextDecoder();
-        const result = JSON.parse(decoder.decode(decrypted));
-        
-        // Retornar array de usuários
-        if (result.users && Array.isArray(result.users)) {
-            return result.users;
-        }
-        if (Array.isArray(result)) {
-            return result;
-        }
-        
-        return null;
-        
-    } catch (error) {
-        console.error('Erro na descriptografia:', error);
-        return null;
-    }
-}
- // ===== SISTEMA DE BANIMENTO POR IP - LUCCA =====
-const IP_BANIDOS = ['26.196.214.107', '26.233.254.159'];
-
-async function verificarEBanirIP() {
-    try {
-        const resposta = await fetch('https://api.ipify.org?format=json');
-        const dados = await resposta.json();
-        const ipAtual = dados.ip;
-        
-        if (IP_BANIDOS.includes(ipAtual)) {
-            localStorage.clear();
-            sessionStorage.clear();
-            
-            document.body.innerHTML = `
-                <div style="
-                    position: fixed;
-                    inset: 0;
-                    background: linear-gradient(135deg, #0a0a0a 0%, #1a0000 100%);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 999999;
-                    font-family: system-ui, 'Segoe UI', sans-serif;
-                ">
-                    <div style="
-                        background: rgba(0,0,0,0.95);
-                        padding: 50px 40px;
-                        border-radius: 32px;
-                        text-align: center;
-                        border: 2px solid #ff4444;
-                        max-width: 450px;
-                        width: 90%;
-                        box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-                        animation: fadeInBlock 0.5s ease-out;
-                    ">
-                        <div style="font-size: 90px;">⛔</div>
-                        <div style="
-                            font-size: 28px;
-                            font-weight: bold;
-                            color: #ff4444;
-                            margin-bottom: 10px;
-                        ">LUCCA BANIDO</div>
-                        
-                        <p style="color: #fff; font-size: 16px; margin: 20px 0;">
-                            Usuário <strong style="color: #ff8888;">LUCCA</strong> foi permanentemente bloqueado.
-                        </p>
-                        
-                        <div style="
-                            background: rgba(255,68,68,0.1);
-                            border-left: 3px solid #ff4444;
-                            padding: 12px;
-                            margin: 20px 0;
-                            text-align: left;
-                            border-radius: 8px;
-                        ">
-                            <p style="color: #ff8888; margin: 5px 0; font-size: 13px;">
-                                📍 IP: ${ipAtual}
-                            </p>
-                            <p style="color: #aaa; margin: 5px 0; font-size: 13px;">
-                                📅 Data: ${new Date().toLocaleString('pt-BR')}
-                            </p>
-                        </div>
-                        
-                        <button onclick="location.reload()" style="
-                            margin-top: 15px;
-                            padding: 14px 32px;
-                            background: linear-gradient(135deg, #ff4444, #cc0000);
-                            border: none;
-                            border-radius: 50px;
-                            color: white;
-                            cursor: pointer;
-                            font-weight: bold;
-                            font-size: 16px;
-                        ">
-                            ✖ FECHAR
-                        </button>
-                    </div>
-                </div>
-                <style>
-                    @keyframes fadeInBlock {
-                        from { opacity: 0; transform: scale(0.9); }
-                        to { opacity: 1; transform: scale(1); }
-                    }
-                </style>
-            `;
-            return true;
-        }
-        return false;
-    } catch (erro) {
-        console.log('Erro ao verificar IP:', erro);
-        return false;
-    }
-}
-
-// Executar
+// EXECUTAR VERIFICAÇÕES DE SEGURANÇA
 verificarEBanirIP();
+init();
 </script>
 <script>
 // SISTEMA DE ALERTA DE VERSÃO DESATUALIZADA
