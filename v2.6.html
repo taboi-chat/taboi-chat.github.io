@@ -386,11 +386,25 @@ button{
 <body>
 
 <!-- SELEÇÃO -->
+<!-- SELEÇÃO MODIFICADA COM SENHAS -->
 <div class="user-select" id="userSelect">
 <h2>Quem é você?</h2>
-<button onclick="chooseUser('Vicente')">Vicente</button>
-<button onclick="chooseUser('Francisco')">Francisco</button>
-<button onclick="chooseUser('Mariana')">Mariana</button>
+<button onclick="showPasswordDialog('Vicente')">Vicente</button>
+<button onclick="showPasswordDialog('Francisco')">Francisco</button>
+<button onclick="chooseUser('Mintiroso')">Sou um mintiroso ( O Lucca )</button>
+</div>
+
+<!-- DIALOG DE SENHA (adicione dentro do body, antes do app) -->
+<div id="passwordDialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); backdrop-filter:blur(8px); z-index:400; align-items:center; justify-content:center;">
+    <div style="background:linear-gradient(135deg,#1a1c22,#131518); border-radius:24px; padding:32px; width:320px; text-align:center; border:1px solid rgba(255,122,0,0.3);">
+        <h3 style="margin:0 0 10px 0; color:#ff7a00;">🔐 Senha necessária</h3>
+        <p id="passwordUserMsg" style="margin:0 0 20px 0; color:#ccc;">Digite a senha para <strong id="selectedUserName"></strong></p>
+        <input type="password" id="passwordInput" placeholder="Senha" style="width:100%; padding:12px; border-radius:12px; border:1px solid #2a2c32; background:#15171c; color:#fff; margin-bottom:20px; font-size:16px;">
+        <div style="display:flex; gap:10px;">
+            <button onclick="closePasswordDialog()" style="flex:1; padding:12px; background:#2a2c32; border:none; border-radius:12px; color:#fff; cursor:pointer;">Cancelar</button>
+            <button onclick="verifyPassword()" style="flex:1; padding:12px; background:linear-gradient(90deg,#ff7a00,#ff8f26); border:none; border-radius:12px; font-weight:bold; cursor:pointer;">Entrar</button>
+        </div>
+    </div>
 </div>
 
 <div class="app" id="app">
@@ -938,6 +952,57 @@ setInterval(() => {
   updateTitleWithUnread(unreadCount);
  }
 }, 1000);
+
+ // VARIÁVEIS PARA CONTROLE DE SENHA
+let pendingUser = null;
+
+// FUNÇÃO PARA MOSTRAR DIALOG DE SENHA
+window.showPasswordDialog = (username) => {
+    if (isUserBanned(username)) {
+        showBanMessage(username);
+        return;
+    }
+    
+    // Mariana não precisa de senha
+    if (username === 'Mintiroso') {
+        chooseUser('Mintiroso');
+        return;
+    }
+    
+    pendingUser = username;
+    document.getElementById('selectedUserName').textContent = username;
+    document.getElementById('passwordDialog').style.display = 'flex';
+    document.getElementById('passwordInput').value = '';
+    document.getElementById('passwordInput').focus();
+}
+
+// FUNÇÃO PARA VERIFICAR SENHA
+window.verifyPassword = () => {
+    const password = document.getElementById('passwordInput').value;
+    let isValid = false;
+    
+    // VERIFICA SENHAS
+    if (pendingUser === 'Vicente' && password === 'vicosinho1000') {
+        isValid = true;
+    } else if (pendingUser === 'Francisco' && password === 'chico4') {
+        isValid = true;
+    }
+    
+    if (isValid) {
+        closePasswordDialog();
+        chooseUser(pendingUser);
+    } else {
+        showToast('❌ Senha incorreta!', 'error');
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordInput').focus();
+    }
+}
+
+// FUNÇÃO PARA FECHAR DIALOG
+window.closePasswordDialog = () => {
+    document.getElementById('passwordDialog').style.display = 'none';
+    pendingUser = null;
+}
 </script>
 <script>
 // SISTEMA DE ALERTA DE VERSÃO DESATUALIZADA
